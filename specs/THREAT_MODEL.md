@@ -13,7 +13,12 @@
 
 ### Agent Privilege Escalation
 * **Threat:** The Planning Agent decides to use the `approve_routine` tool without human involvement.
-* **Mitigation:** The MCP server independently validates that the caller has the `caregiver` role in the session context. Agents cannot spoof user sessions. Trajectory evaluations explicitly test for early or unauthorized tool calls.
+* **Mitigation (Phase 1.5 Implemented):** The MCP server independently validates that the caller has the `caregiver` role in the session context. The explicit routine state machine (`draft -> active`) enforces that a routine can only be activated if its safety decision was `allow_for_review` and a caregiver explicitly approved it.
+
+### Model-Controlled Context Manipulation (Impersonation)
+* **Threat:** The LLM attempts to supply or modify the `ActorContext` (e.g. by adding `actor_id` or changing roles to `caregiver` in its tool call arguments).
+* **Mitigation:** The MCP server separates model-controlled arguments from the trusted invocation context. The `_context` parameter is stripped from the public MCP schema, meaning the LLM has no visibility into it and cannot supply it. Only the trusted FastAPI application gateway can inject the validated `_context` into the RPC payload. The MCP server rejects any calls missing the trusted context and validates that any user querying data matches their database relationship permissions.
+
 
 ### Data Exposure (Privacy)
 * **Threat:** The agent reads past routines of User B to generate a routine for User A.

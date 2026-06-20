@@ -48,12 +48,13 @@ Migration scripts will be strictly versioned in `infra/database/migrations`. The
 * **Python:** `3.11`
 * **FastAPI:** `0.111.0`
 * **Uvicorn:** `0.30.1`
-* **Pydantic:** `2.7.1`
+* **Pydantic:** `2.13.4`
 * **SQLAlchemy:** `2.0.30`
 * **Alembic:** `1.13.1`
-* **Google ADK / google-genai:** `0.5.0` (Assuming current stable)
-* **MCP SDK:** `1.0.0` (Assuming current standard)
+* **Google ADK / google-genai:** `0.5.0`
+* **MCP SDK:** `1.28.0`
 * **asyncpg:** `0.29.0`
+
 
 ## 5. Sequence of Implementation Milestones
 * **Phase 0:** Planning and Scaffold (Current)

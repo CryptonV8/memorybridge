@@ -1,0 +1,45 @@
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+.tox/
+
+# Local databases & SQLite files
+*.db
+*.sqlite
+*.sqlite3
+test.db
+
+# Environment variables files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE local files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node modules / UI dependencies
+node_modules/
+.next/
+dist/
+out/
+build/
+.next/
