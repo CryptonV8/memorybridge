@@ -84,3 +84,33 @@ class SafetyPolicyResult(BaseModel):
 class UserQueryRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     user_id: str
+
+
+class RoutineGetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    routine_id: str
+
+
+class RoutineUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    routine_id: str
+    updates: dict
+
+
+class RoutineRejectRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    routine_id: str
+
+
+class RoutineListRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    assisted_user_id: Optional[str] = None
+    status: Optional[str] = None
+    limit: int = 20
+    cursor: Optional[str] = None
+
+
+class AuditGetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    correlation_id: str
+

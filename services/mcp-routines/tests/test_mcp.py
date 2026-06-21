@@ -6,8 +6,23 @@ sys.path.insert(0, dirname(dirname(abspath(__file__))))
 import pytest
 from pydantic import ValidationError
 
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from src.database import Base
 from src.models import User, CaregiverRelationship, Routine, AuditEvent
+
 from src import mcp_server, schemas, auth, safety
+
+
+@pytest.fixture(scope="function")
+def db_session():
+    # Use in-memory SQLite for tests
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    Base.metadata.create_all(bind=engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
+    yield session
+    session.close()
 
 
 @pytest.fixture
@@ -286,3 +301,163 @@ def test_create_caregiver_alert_deduplication(db_session, setup_users):
         .first()
     )
     assert audit is not None
+
+
+def test_get_routine_authorization(db_session, setup_users):
+    # Setup a draft routine
+    routine = Routine(
+        id="r-get-1",
+        assisted_user_id="au1",
+        created_by="cg1",
+        title="Get test",
+        scheduled_time="12:00",
+        timezone="UTC",
+        steps_json=["step"],
+        risk_level="low",
+        safety_decision="allow_for_review",
+        status="draft",
+        approval_status="pending",
+    )
+    db_session.add(routine)
+    db_session.commit()
+
+    # Authorized caregiver
+    ctx_cg = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-get")
+    res = mcp_server.get_routine(db_session, ctx_cg, "r-get-1")
+    assert res.title == "Get test"
+
+    # Authorized assisted user
+    ctx_au = schemas.ActorContext(actor_id="au1", role=schemas.Role.assisted_user, correlation_id="c-get")
+    res = mcp_server.get_routine(db_session, ctx_au, "r-get-1")
+    assert res.title == "Get test"
+
+    # Unauthorized caregiver
+    other_cg = User(id="cg_other", display_name="Other Caregiver", role="caregiver")
+    db_session.add(other_cg)
+    db_session.commit()
+    ctx_other = schemas.ActorContext(actor_id="cg_other", role=schemas.Role.caregiver, correlation_id="c-get")
+    with pytest.raises(auth.UnauthorizedError):
+        mcp_server.get_routine(db_session, ctx_other, "r-get-1")
+
+
+def test_update_routine_validation_and_reclassification(db_session, setup_users):
+    routine = Routine(
+        id="r-up-1",
+        assisted_user_id="au1",
+        created_by="cg1",
+        title="Water Plants",
+        scheduled_time="12:00",
+        timezone="UTC",
+        steps_json=["step"],
+        risk_level="low",
+        safety_decision="allow_for_review",
+        status="draft",
+        approval_status="pending",
+    )
+    db_session.add(routine)
+    db_session.commit()
+
+    ctx = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-up")
+
+    # Update non-content field: timezone
+    req = schemas.RoutineUpdateRequest(routine_id="r-up-1", updates={"timezone": "EST"})
+    res = mcp_server.update_routine(db_session, ctx, req)
+    assert res.timezone == "EST"
+    assert res.safety_decision == "allow_for_review" # preserved
+
+    # Update content field to safe: title
+    req = schemas.RoutineUpdateRequest(routine_id="r-up-1", updates={"title": "Mow Lawn"})
+    res = mcp_server.update_routine(db_session, ctx, req)
+    assert res.title == "Mow Lawn"
+    assert res.safety_decision == "allow_for_review" # resets to low-risk draft
+
+    # Update content field to prohibited: title
+    req = schemas.RoutineUpdateRequest(routine_id="r-up-1", updates={"title": "Take Medication"})
+    res = mcp_server.update_routine(db_session, ctx, req)
+    assert res.title == "Take Medication"
+    assert res.safety_decision == "reject_prohibited" # reclassified
+    assert res.status == "rejected"
+
+    # Try updating a rejected routine: should fail
+    req = schemas.RoutineUpdateRequest(routine_id="r-up-1", updates={"title": "Safe again"})
+    with pytest.raises(ValueError):
+        mcp_server.update_routine(db_session, ctx, req)
+
+
+def test_reject_routine_idempotence(db_session, setup_users):
+    routine = Routine(
+        id="r-rej-1",
+        assisted_user_id="au1",
+        created_by="cg1",
+        title="Safe routine",
+        scheduled_time="12:00",
+        timezone="UTC",
+        steps_json=["step"],
+        risk_level="low",
+        safety_decision="allow_for_review",
+        status="draft",
+        approval_status="pending",
+    )
+    db_session.add(routine)
+    db_session.commit()
+
+    ctx = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-rej")
+
+    # First rejection
+    res = mcp_server.reject_routine(db_session, ctx, "r-rej-1")
+    assert res.status == "rejected"
+    assert res.approval_status == "rejected"
+
+    # Second rejection (idempotent check)
+    res2 = mcp_server.reject_routine(db_session, ctx, "r-rej-1")
+    assert res2.status == "rejected"
+
+
+def test_list_caregiver_routines(db_session, setup_users):
+    # Create another routine for au1
+    r2 = Routine(
+        id="r-list-2",
+        assisted_user_id="au1",
+        created_by="cg1",
+        title="Another Routine",
+        scheduled_time="13:00",
+        timezone="UTC",
+        steps_json=["step"],
+        risk_level="low",
+        safety_decision="allow_for_review",
+        status="draft",
+        approval_status="pending",
+    )
+    db_session.add(r2)
+    db_session.commit()
+
+    ctx = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-list")
+    req = schemas.RoutineListRequest(status="draft")
+    res = mcp_server.list_caregiver_routines(db_session, ctx, req)
+    assert len(res["routines"]) >= 1
+
+
+def test_get_audit_events_redaction(db_session, setup_users):
+    # Log an audit event with sensitive data
+    event = AuditEvent(
+        correlation_id="c-audit-test",
+        actor_id="cg1",
+        tool_name="create_routine_draft",
+        event_type="routine_created",
+        decision="allow_for_review",
+        metadata_json={
+            "routine_id": "r-audit-123",
+            "internal_prompt": "secret instructions...",
+            "risk_level": "low"
+        }
+    )
+    db_session.add(event)
+    db_session.commit()
+
+    ctx = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-audit-test")
+    res = mcp_server.get_audit_events(db_session, ctx, "c-audit-test")
+    assert len(res) == 1
+    # Verify sensitive field redacted
+    assert "internal_prompt" not in res[0]["metadata"]
+    assert res[0]["metadata"]["routine_id"] == "r-audit-123"
+

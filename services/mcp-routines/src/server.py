@@ -199,6 +199,96 @@ async def handle_list_tools() -> List[Tool]:
                 "additionalProperties": False,
             },
         ),
+        Tool(
+            name="get_routine",
+            description="Retrieve a single routine by ID. Enforces caregiver/user authorization.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "routine_id": {
+                        "type": "string",
+                        "description": "The UUID of the routine.",
+                    }
+                },
+                "required": ["routine_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="update_routine",
+            description="Update routine details. Reruns deterministic safety checks and resets approval status on content changes.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "routine_id": {
+                        "type": "string",
+                        "description": "The UUID of the routine.",
+                    },
+                    "updates": {
+                        "type": "object",
+                        "description": "Fields to update (title, steps_json, purpose, scheduled_time, timezone).",
+                    }
+                },
+                "required": ["routine_id", "updates"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="reject_routine",
+            description="Reject an unapproved routine draft. Enforces caregiver authorization.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "routine_id": {
+                        "type": "string",
+                        "description": "The UUID of the routine draft.",
+                    }
+                },
+                "required": ["routine_id"],
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="list_caregiver_routines",
+            description="List routines belonging to the caregiver's approved assisted users.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "assisted_user_id": {
+                        "type": "string",
+                        "description": "Filter by assisted user UUID.",
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Filter by routine status.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of records to return.",
+                    },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Pagination cursor.",
+                    }
+                },
+                "additionalProperties": False,
+            },
+        ),
+        Tool(
+            name="get_audit_events",
+            description="Retrieve redacted audit events for a correlation ID.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "correlation_id": {
+                        "type": "string",
+                        "description": "The correlation UUID.",
+                    }
+                },
+                "required": ["correlation_id"],
+                "additionalProperties": False,
+            },
+        ),
     ]
 
 
@@ -363,6 +453,86 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResu
             )
             return CallToolResult(
                 content=[TextContent(type="text", text=json.dumps(contacts))]
+            )
+
+        elif name == "get_routine":
+            req_get = schemas.RoutineGetRequest.model_validate(arguments)
+            routine = mcp_server.get_routine(db, context, req_get.routine_id)
+            res = {
+                "id": routine.id,
+                "assisted_user_id": routine.assisted_user_id,
+                "title": routine.title,
+                "purpose": routine.purpose,
+                "scheduled_time": routine.scheduled_time,
+                "timezone": routine.timezone,
+                "steps_json": routine.steps_json,
+                "risk_level": routine.risk_level,
+                "safety_decision": routine.safety_decision,
+                "approval_status": routine.approval_status,
+                "status": routine.status,
+                "created_at": routine.created_at.isoformat() if routine.created_at else None,
+                "approved_at": routine.approved_at.isoformat() if routine.approved_at else None,
+            }
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
+            )
+
+        elif name == "update_routine":
+            req_update = schemas.RoutineUpdateRequest.model_validate(arguments)
+            routine = mcp_server.update_routine(db, context, req_update)
+            res = {
+                "id": routine.id,
+                "assisted_user_id": routine.assisted_user_id,
+                "title": routine.title,
+                "purpose": routine.purpose,
+                "scheduled_time": routine.scheduled_time,
+                "timezone": routine.timezone,
+                "steps_json": routine.steps_json,
+                "risk_level": routine.risk_level,
+                "safety_decision": routine.safety_decision,
+                "approval_status": routine.approval_status,
+                "status": routine.status,
+                "created_at": routine.created_at.isoformat() if routine.created_at else None,
+                "approved_at": routine.approved_at.isoformat() if routine.approved_at else None,
+            }
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
+            )
+
+        elif name == "reject_routine":
+            req_reject = schemas.RoutineRejectRequest.model_validate(arguments)
+            routine = mcp_server.reject_routine(db, context, req_reject.routine_id)
+            res = {
+                "id": routine.id,
+                "assisted_user_id": routine.assisted_user_id,
+                "title": routine.title,
+                "purpose": routine.purpose,
+                "scheduled_time": routine.scheduled_time,
+                "timezone": routine.timezone,
+                "steps_json": routine.steps_json,
+                "risk_level": routine.risk_level,
+                "safety_decision": routine.safety_decision,
+                "approval_status": routine.approval_status,
+                "status": routine.status,
+                "created_at": routine.created_at.isoformat() if routine.created_at else None,
+                "approved_at": routine.approved_at.isoformat() if routine.approved_at else None,
+            }
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
+            )
+
+        elif name == "list_caregiver_routines":
+            req_list = schemas.RoutineListRequest.model_validate(arguments)
+            res = mcp_server.list_caregiver_routines(db, context, req_list)
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
+            )
+
+        elif name == "get_audit_events":
+            req_audit = schemas.AuditGetRequest.model_validate(arguments)
+            res = mcp_server.get_audit_events(db, context, req_audit.correlation_id)
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
             )
 
         else:
