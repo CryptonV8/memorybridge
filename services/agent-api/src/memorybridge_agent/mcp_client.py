@@ -28,8 +28,9 @@ async def call_mcp_tool(
     # Inject trusted context
     arguments["_context"] = context.model_dump()
     
+    python_path = os.path.join(MCP_ROUTINES_DIR, "venv", "bin", "python")
     server_params = StdioServerParameters(
-        command=sys.executable,
+        command=python_path,
         args=["-m", "src.server"], # Assuming src.server is the entry point
         env={"PYTHONPATH": "."}, # Ensuring imports work
         # Setting CWD for the server process to the mcp-routines directory
@@ -52,7 +53,19 @@ async def call_mcp_tool(
                 
                 # Execute the tool
                 result = await session.call_tool(tool_name, arguments)
-                return result
+                
+                # Unpack CallToolResult
+                if getattr(result, "isError", False):
+                    error_msg = result.content[0].text if result.content else "Unknown MCP error"
+                    raise RuntimeError(f"MCP tool error: {error_msg}")
+                
+                if result.content and len(result.content) > 0:
+                    text_content = result.content[0].text
+                    try:
+                        return json.loads(text_content)
+                    except json.JSONDecodeError:
+                        return text_content
+                return {}
     except Exception as exc:
         logger.error(f"MCP Tool invocation failed: {exc}", exc_info=True)
         raise

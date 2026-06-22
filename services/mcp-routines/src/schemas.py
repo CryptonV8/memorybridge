@@ -27,7 +27,7 @@ class SafetyDecision(str, Enum):
 
 
 class ActorContext(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="ignore")
     actor_id: str
     role: Role
     correlation_id: str
@@ -43,6 +43,7 @@ class RoutineDraftRequest(BaseModel):
     steps_json: List[str] = Field(..., min_length=1, max_length=5)
     risk_level: str
     safety_decision: str
+    metadata: Optional[dict] = None
 
     @field_validator("steps_json")
     @classmethod
@@ -113,4 +114,10 @@ class RoutineListRequest(BaseModel):
 class AuditGetRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     correlation_id: str
+
+
+class CaregiverAlertsGetRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    caregiver_id: str
+
 

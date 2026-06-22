@@ -11,7 +11,9 @@ export const RoutineSchema = z.object({
   risk_level: z.enum(['low', 'medium', 'prohibited']),
   safety_decision: z.enum(['allow_for_review', 'reject_medium_risk', 'reject_prohibited']),
   approval_status: z.enum(['pending', 'approved', 'rejected']),
-  status: z.enum(['draft', 'active', 'completed', 'help_requested', 'missed', 'rejected']),
+  status: z.enum(['draft', 'pending_approval', 'active', 'completed', 'help_requested', 'missed', 'rejected']),
+  correlation_id: z.string().uuid().nullable().optional(),
+  metadata: z.record(z.string(), z.any()).nullable().optional(),
 });
 
 export type Routine = z.infer<typeof RoutineSchema>;
@@ -22,7 +24,7 @@ export const AuditEventSchema = z.object({
   tool_name: z.string(),
   event_type: z.string(),
   decision: z.string(),
-  metadata: z.record(z.any()),
+  metadata: z.record(z.string(), z.any()),
   created_at: z.string(),
 });
 
@@ -33,6 +35,8 @@ export const AlertSchema = z.object({
   caregiver_user_id: z.string().uuid(),
   message: z.string(),
   status: z.enum(['unread', 'read']),
+  priority: z.enum(['low', 'normal', 'high']).optional(),
+  created_at: z.string().optional(),
 });
 
 export type Alert = z.infer<typeof AlertSchema>;
@@ -43,8 +47,14 @@ export const PaginatedRoutinesSchema = z.object({
 });
 
 export const InterpretationDraftSchema = z.object({
-  status: z.string(),
-  routine_id: z.string().uuid(),
+  draft_id: z.string().uuid(),
+  title: z.string(),
+  scheduled_time: z.string(),
+  steps: z.array(z.string()),
+  safety_decision: z.string(),
+  policy_reasons: z.array(z.string()),
+  visible_steps: z.array(z.string()).nullable().optional(),
+  help_text: z.string().nullable().optional(),
 });
 
 export const ErrorResponseSchema = z.object({

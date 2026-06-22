@@ -43,7 +43,24 @@ async def interpret_routine(
     if settings.agent_provider == "gemini":
         provider = GeminiProvider(api_key=settings.google_api_key, model=settings.memorybridge_model)
     else:
-        provider = FakeProvider(responses={"RoutinePlanOutput": {"title": payload.text, "steps": ["fake step"]}})
+        is_meds = any(k in payload.text.lower() for k in ["medication", "pill", "dose", "tablet", "prescription"])
+        provider = FakeProvider(responses={
+            "RoutinePlanOutput": {
+                "title": "Change medication" if is_meds else payload.text,
+                "steps": ["Take an extra pill"] if is_meds else ["Take the watering can", "Water the plants near the window"],
+                "scheduled_time": "08:00" if is_meds else "10:00",
+                "missing_information": []
+            },
+            "SafetyReviewOutput": {
+                "risk_level": "prohibited" if is_meds else "low",
+                "safety_decision": "reject_prohibited" if is_meds else "allow_for_review",
+                "policy_reasons": ["Medication routines cannot be managed automatically."] if is_meds else ["The routine is a familiar, low-risk household activity."]
+            },
+            "CommunicationOutput": {
+                "visible_steps": ["Take pill."] if is_meds else ["Take the watering can.", "Water the plants near the window."],
+                "help_text": "Press Help me if you would like support."
+            }
+        })
         
     result = await execute_interpret_workflow(payload.text, payload.assisted_user_id, context, provider)
     return AgentDraftResponse(**result)

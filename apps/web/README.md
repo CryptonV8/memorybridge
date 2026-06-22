@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MemoryBridge: Web Application
 
-## Getting Started
+This is the Next.js web application for MemoryBridge. It serves as the primary caregiver web portal.
 
-First, run the development server:
+---
 
+## 1. Local Development
+
+### Prerequisites
+Make sure the gateway API service (`agent-api` on port 8000) is running before starting the web application.
+
+### Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Run Server
+Start the Next.js server in development mode on port 3000:
+```bash
+npm run dev -- -p 3000
+```
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 2. Server-Side Security Boundary
 
-## Learn More
+- **Upstream Authorization:** The application gateway's `DEMO_CAREGIVER_TOKEN` is loaded purely from environment variables on the server.
+- **Signed Cookie Session:** Caregivers are issued encrypted session cookies using `iron-session`. The client browser never receives the caregiver token, preventing token leakages.
+- **Server-Only Execution:** Direct API fetch calls run strictly on the server (`lib/api-client.ts`). The browser never directly contacts `services/agent-api`.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 3. Route Inventory
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `/login` - Demo login form.
+- `/caregiver` - Dashboard.
+- `/caregiver/routines/new` - Creation.
+- `/caregiver/routines/[routineId]` - Detail review, safety alerts, edit form, and activation gates.
+- `/caregiver/alerts` - Notifications.
+- `/caregiver/audit` - Redacted logs audit trail.
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 4. Running Tests
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Unit & Security Tests
+Verify components and static compilation bundles for caregiver token exposure:
+```bash
+npm test
+```
+
+### Playwright Integration (E2E)
+```bash
+npx playwright test
+```
+The integration suite automatically executes authentication, routine parsing, draft step editing, safety check validations, alerts logs, and audit logs.

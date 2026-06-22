@@ -7,6 +7,12 @@ security = HTTPBearer()
 
 # Demo Static Token Lookup
 DEMO_TOKENS: dict[str, dict[str, Any]] = {
+    "demo-token-123": {
+        "actor_id": "user-caregiver-anna",
+        "role": "caregiver",
+        "caregiver_relationship_scope": ["user-assisted-maria"],
+        "authorization_scope": "full"
+    },
     "caregiver_demo_token": {
         "actor_id": "cg-123",
         "role": "caregiver",

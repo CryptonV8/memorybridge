@@ -54,13 +54,17 @@ def create_routine_draft(
         ),
     )
     db.add(routine)
+    audit_metadata = {"routine_id": routine.id}
+    if request.metadata:
+        audit_metadata.update(request.metadata)
+
     append_audit_event(
         db,
         context,
         "create_routine_draft",
         "routine_created",
         final_decision,
-        {"routine_id": routine.id},
+        audit_metadata,
     )
     db.commit()
     db.refresh(routine)
@@ -492,4 +496,31 @@ def get_audit_events(db: Session, context: schemas.ActorContext, correlation_id:
             "created_at": event.created_at.isoformat() if event.created_at else None
         })
     return result
+
+
+def get_caregiver_alerts(db: Session, context: schemas.ActorContext, caregiver_id: str) -> list:
+    if context.role != schemas.Role.caregiver:
+        raise auth.UnauthorizedError("Only caregivers can retrieve alerts.")
+    if context.actor_id != caregiver_id:
+        raise auth.UnauthorizedError("Unauthorized for this caregiver.")
+
+    alerts = db.query(models.CaregiverAlert).filter(
+        models.CaregiverAlert.caregiver_user_id == caregiver_id
+    ).order_by(models.CaregiverAlert.created_at.desc()).all()
+
+    return [
+        {
+            "id": a.id,
+            "caregiver_user_id": a.caregiver_user_id,
+            "assisted_user_id": a.assisted_user_id,
+            "routine_id": a.routine_id,
+            "alert_type": a.alert_type,
+            "priority": a.priority,
+            "message": a.message,
+            "status": a.status,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+        }
+        for a in alerts
+    ]
+
 

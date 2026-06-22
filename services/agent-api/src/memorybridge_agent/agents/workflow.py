@@ -74,7 +74,16 @@ async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
         "title": plan.title if plan else state.get("sanitized_text", "Untitled"),
         "steps_json": plan.steps if plan else [],
         "risk_level": safety.risk_level if safety else "prohibited",
-        "safety_decision": safety.safety_decision if safety else "reject_prohibited"
+        "safety_decision": safety.safety_decision if safety else "reject_prohibited",
+        "scheduled_time": plan.scheduled_time if (plan and plan.scheduled_time) else "10:00",
+        "timezone": "Europe/Sofia",
+        "metadata": {
+            "policy_reasons": safety.policy_reasons if safety else ["Deterministic block"],
+            "visible_steps": visible_steps,
+            "help_text": help_text,
+            "missing_information": plan.missing_information if plan else [],
+            "original_instruction": state.get("caregiver_text", "")
+        }
     }
     
     # Application-controlled MCP create_routine_draft
@@ -83,7 +92,7 @@ async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
     
     # Prepare the final response
     state["final_response"] = {
-        "draft_id": result.get("routine_id", "draft-123"),
+        "draft_id": result.get("id") or result.get("routine_id") or "draft-123",
         "title": draft_payload["title"],
         "scheduled_time": plan.scheduled_time if plan else "N/A",
         "steps": draft_payload["steps_json"],

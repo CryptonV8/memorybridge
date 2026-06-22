@@ -1,125 +1,123 @@
-# MemoryBridge
+# MemoryBridge: Safe Daily Routine and Caregiver Support Agent
 
-## Executive Summary
-MemoryBridge is an educational capstone prototype and safety-first assistive application tailored for people living with early-stage dementia, alongside the family members or caregivers who support them.
+MemoryBridge is a safety-first assistive prototype application tailored for people living with early-stage dementia, alongside the family members or caregivers who support them.
 
-The application translates natural language caregiver instructions into simple, low-risk, and structured daily routines using a multi-agent system. It incorporates strict safety policies, deterministic MCP tools, human-in-the-loop approval, and dementia-friendly communication formatting to deliver safe and accessible guidance.
+---
 
-## Personas
-1. **Assisted User:** A person living with early-stage dementia needing minimal cognitive load, accessible interfaces, and straightforward ways to request help or mark tasks as done.
-2. **Caregiver:** A trusted family member or professional needing an easy way to create routines, review AI interpretations, grant approvals, and receive alerts.
-3. **System Administrator:** A role for managing policies, testing, and evaluation runs.
+## 1. System Overview
 
-## Safety Boundaries & Non-Goals
-**MemoryBridge is NOT a medical device.**
-- **Non-Goals:** It will not diagnose dementia, provide medical advice, alter medication, detect emergencies, manage finances, unlock doors, or replace professional care.
-- **Data:** Uses synthetic demo data ONLY. No real patient records will be processed.
-- **Interactions:** No external communications (SMS, email, emergency services) are supported in the MVP. In-app alerts only.
-- **Authorization:** Employs a deny-by-default policy. Caregivers MUST explicitly approve any routine before it becomes active.
+MemoryBridge is designed as a monorepo containing three core components:
+1. **Next.js Web Interface** (`apps/web`): Portal for Caregivers to create, edit, revalidate, and approve daily routines.
+2. **FastAPI Agent Service** (`services/agent-api`): An orchestration layer using Google ADK to run safe daily routine interpretation workflows.
+3. **MCP Routines Server** (`services/mcp-routines`): A Model Context Protocol server executing deterministic database updates and policy checks over Neon PostgreSQL.
 
-## Monorepo Structure
+---
 
-```
-memorybridge/
-├── apps/
-│   └── web/                        # Next.js Caregiver & Assisted User UI
-├── services/
-│   ├── agent-api/                  # FastAPI + Google ADK agent service
-│   └── mcp-routines/               # MCP server for deterministic persistence
-├── specs/                          # Design and planning artifacts
-├── .agent/
-│   └── skills/                     # ADK Agent Skills (SKILL.md)
-├── evals/                          # Evaluation datasets
-├── infra/                          # Cloud Run and Database infrastructure
-└── scripts/                        # Seeding and evaluation runner scripts
-```
+## 2. Server-Only Session & Token Isolation Design
 
-## Responsible Use
-MemoryBridge is a prototype demonstrating safe agent architecture. It employs sandboxed execution, strict human-in-the-loop requirements, and typed MCP schemas to guarantee deterministic persistence. High-risk actions are categorically blocked and require immediate human escalation.
+To prevent security risks and guarantee that the upstream `DEMO_CAREGIVER_TOKEN` is never sent to the browser:
+- **Cookie-Based Sessions:** The web interface authenticates caregivers via a signed, encrypted server-side session cookie (`iron-session`).
+- **HttpOnly & Secure:** The session cookie is configured as `HttpOnly`, `SameSite=Lax` or stricter, and `Secure` in production, blocking client-side JavaScript access.
+- **Server API Boundary:** The Next.js server actions act as the exclusive boundary to the backend FastAPI Agent Service. All requests are proxied server-side, attaching the `DEMO_CAREGIVER_TOKEN` only on authorized server processes. The browser never receives this token.
 
-## Local Development Commands (Phase 1.5)
+---
 
-Ensure you are using Python 3.11 (you can use `uv` to manage python versions). All backend commands should be run inside `services/mcp-routines`.
+## 3. Local Service Startup Order
 
-### 1. Setup & Dependencies
+To run MemoryBridge locally, start the services in this exact order:
 
+### Step 1: PostgreSQL Database Setup
+Ensure PostgreSQL is running and seed the database schemas. Inside `services/mcp-routines`:
 ```bash
-# Recreate virtual environment with Python 3.11 using uv
+# Recreate virtual env and install requirements
 uv venv venv --python 3.11
 source venv/bin/activate
-
-# Install dependencies
 uv pip install -r requirements.txt
-```
 
-### 2. Database Migrations (Alembic)
-
-```bash
-# Run migrations on database defined in DATABASE_URL
+# Run migrations
 alembic upgrade head
-```
 
-### 3. Run MCP Server
-
-To start the standards-compliant MCP server locally using stdio transport:
-
-```bash
-python src/server.py
-```
-
-### 4. Client Smoke-Test Command
-
-To smoke-test the running server from an external MCP client (verifying session initialization and tool listing):
-
-```bash
-python -c "
-import asyncio
-from mcp import ClientSession, StdioServerParameters
-from mcp.client.stdio import stdio_client
-async def run():
-    params = StdioServerParameters(command='python', args=['src/server.py'])
-    async with stdio_client(params) as (read, write):
-        async with ClientSession(read, write) as session:
-            await session.initialize()
-            tools = await session.list_tools()
-            print('Successfully connected!')
-            print('Exposed tools:', [t.name for t in tools.tools])
-asyncio.run(run())
-"
-```
-
-### 5. Running Tests
-
-Note: Database integration tests and MCP protocol tests require a PostgreSQL database URL. They will fail clearly if run against SQLite or without configuration.
-
-```bash
-# To run unit tests only (no database required):
-pytest -k "not integration and not protocol"
-
-# To run all tests (requires TEST_DATABASE_URL to be set to a PostgreSQL database):
-export TEST_DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
-pytest
-```
-
-### 6. Seeding Demo Data
-
-```bash
-# To seed local/remote database (requires DATABASE_URL to be set):
+# Seed synthetic demo data (Anna Petrova & Maria Petrova)
 export DATABASE_URL="postgresql://user:pass@localhost:5432/dbname"
 python ../../scripts/seed_demo_data.py
 ```
 
-### 7. Formatting, Linting, & Type Checking
-
+### Step 2: Start FastAPI Agent Service (Gateway)
+Starts the gateway server on port 8000. It communicates with the MCP server on-demand via stdio transport. Inside `services/agent-api`:
 ```bash
-# Formatting check
-black --check src tests
+# Setup virtual env
+uv venv .venv --python 3.11
+source .venv/bin/activate
+uv pip install -r requirements.txt
 
-# Linting
-flake8 src tests
+# Run API server (Uvicorn)
+uvicorn src.memorybridge_agent.main:app --port 8000
+```
+*Note: To run in developer/testing mode, configure `AGENT_PROVIDER=fake` in `.env.local` to use the deterministic fake-model provider.*
 
-# Type Checking
-mypy src
+### Step 3: Start Next.js Web Application
+Starts the frontend dashboard on port 3000. Inside `apps/web`:
+```bash
+# Install NPM dependencies
+npm install
+
+# Run the Next.js dev server
+npm run dev -- -p 3000
 ```
 
+---
 
+## 4. Test Commands
+
+MemoryBridge has multi-tier tests verifying formatting, types, APIs, security, and UI flows.
+
+### Gateway and MCP Service Tests (Python):
+Run pytest inside `services/agent-api` and `services/mcp-routines` to test logic and schemas.
+```bash
+# Agent-API Tests
+cd services/agent-api
+./.venv/bin/pytest
+
+# MCP Server Tests
+cd services/mcp-routines
+PYTHONPATH=. ./venv/bin/pytest
+```
+
+### Frontend Unit & Security Tests (Jest):
+Run Jest tests verifying layout rendering, state filters, and client bundle token non-exposure.
+```bash
+cd apps/web
+npm test
+```
+
+### End-to-End Tests (Playwright):
+Run Playwright integration test suite covering the entire user flow in deterministic fake-model mode.
+```bash
+cd apps/web
+npx playwright test
+```
+
+---
+
+## 5. Visual Screenshot Generation
+
+To visually verify responsive layouts across Desktop (1440x900), Tablet (768x1024), and Mobile (390x844):
+- Screenshots are automatically captured by Playwright during the E2E test runs.
+- Visual files are written to the artifacts directory, including `login`, `dashboard`, `new_routine`, and `filled_routine_form` layouts.
+
+---
+
+## 6. Accessibility Audits
+
+MemoryBridge targets WCAG 2.2 AA. Verify accessibility manually or via automated checks:
+- Skip navigation link is accessible as the first keyboard focus target.
+- Color contrast meets standard ratios.
+- Inputs, checkboxes, and buttons feature visible focus outline indicators.
+- Interactive targets support a minimum size of 44 × 44 pixels.
+
+---
+
+## 7. Project Limitations & Phasing
+
+- **MVP Sandbox:** Synthetic datasets only. SMS, email, telephone, or live emergency services are NOT implemented.
+- **Phase 4 Status:** Phase 4 (Assisted User `/today` interface and live Text-to-Speech) has not started. All current changes are restricted to Phase 3.

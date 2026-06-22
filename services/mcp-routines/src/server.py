@@ -45,7 +45,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["user_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -91,6 +91,10 @@ async def handle_list_tools() -> List[Tool]:
                         "type": "string",
                         "description": "Safety evaluation decision.",
                     },
+                    "metadata": {
+                        "type": "object",
+                        "description": "Optional metadata such as policy reasons and visible steps.",
+                    },
                 },
                 "required": [
                     "assisted_user_id",
@@ -101,7 +105,7 @@ async def handle_list_tools() -> List[Tool]:
                     "risk_level",
                     "safety_decision",
                 ],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -120,7 +124,7 @@ async def handle_list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["routine_id", "caregiver_user_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -135,7 +139,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["user_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -154,7 +158,7 @@ async def handle_list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["routine_id", "status"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -181,7 +185,7 @@ async def handle_list_tools() -> List[Tool]:
                     },
                 },
                 "required": ["assisted_user_id", "routine_id", "alert_type", "message"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -196,7 +200,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["user_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -211,7 +215,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["routine_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -230,7 +234,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["routine_id", "updates"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -245,7 +249,7 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["routine_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -271,7 +275,7 @@ async def handle_list_tools() -> List[Tool]:
                         "description": "Pagination cursor.",
                     }
                 },
-                "additionalProperties": False,
+                "additionalProperties": True,
             },
         ),
         Tool(
@@ -286,7 +290,22 @@ async def handle_list_tools() -> List[Tool]:
                     }
                 },
                 "required": ["correlation_id"],
-                "additionalProperties": False,
+                "additionalProperties": True,
+            },
+        ),
+        Tool(
+            name="get_caregiver_alerts",
+            description="Retrieve caregiver alerts.",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "caregiver_id": {
+                        "type": "string",
+                        "description": "The caregiver user UUID.",
+                    }
+                },
+                "required": ["caregiver_id"],
+                "additionalProperties": True,
             },
         ),
     ]
@@ -458,6 +477,20 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResu
         elif name == "get_routine":
             req_get = schemas.RoutineGetRequest.model_validate(arguments)
             routine = mcp_server.get_routine(db, context, req_get.routine_id)
+            
+            # Small backend change to expose correlation_id for the UI
+            from sqlalchemy import text
+            # Since routine creation adds an event with the routine_id in metadata_json
+            # and Neon Postgres is used, we can query safely or just fetch events and filter.
+            events = db.query(models.AuditEvent).filter(models.AuditEvent.tool_name == "create_routine_draft").all()
+            correlation_id = None
+            metadata = {}
+            for e in events:
+                if e.metadata_json.get("routine_id") == routine.id:
+                    correlation_id = e.correlation_id
+                    metadata = {k: v for k, v in e.metadata_json.items() if k != "routine_id"}
+                    break
+
             res = {
                 "id": routine.id,
                 "assisted_user_id": routine.assisted_user_id,
@@ -472,6 +505,8 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResu
                 "status": routine.status,
                 "created_at": routine.created_at.isoformat() if routine.created_at else None,
                 "approved_at": routine.approved_at.isoformat() if routine.approved_at else None,
+                "correlation_id": correlation_id,
+                "metadata": metadata,
             }
             return CallToolResult(
                 content=[TextContent(type="text", text=json.dumps(res))]
@@ -531,6 +566,13 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> CallToolResu
         elif name == "get_audit_events":
             req_audit = schemas.AuditGetRequest.model_validate(arguments)
             res = mcp_server.get_audit_events(db, context, req_audit.correlation_id)
+            return CallToolResult(
+                content=[TextContent(type="text", text=json.dumps(res))]
+            )
+
+        elif name == "get_caregiver_alerts":
+            req_alerts = schemas.CaregiverAlertsGetRequest.model_validate(arguments)
+            res = mcp_server.get_caregiver_alerts(db, context, req_alerts.caregiver_id)
             return CallToolResult(
                 content=[TextContent(type="text", text=json.dumps(res))]
             )

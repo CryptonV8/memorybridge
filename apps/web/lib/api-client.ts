@@ -50,10 +50,10 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   return response.json();
 }
 
-export async function interpretRoutine(text: string) {
+export async function interpretRoutine(text: string, assistedUserId: string = 'user-assisted-maria') {
   const data = await fetchAPI('/api/routines/interpret', {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({ text, assisted_user_id: assistedUserId }),
   });
   return InterpretationDraftSchema.parse(data);
 }

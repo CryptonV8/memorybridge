@@ -9,7 +9,7 @@ from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from src.database import Base
-from src.models import User, CaregiverRelationship, Routine, AuditEvent
+from src.models import User, CaregiverRelationship, Routine, AuditEvent, CaregiverAlert
 
 from src import mcp_server, schemas, auth, safety
 
@@ -460,4 +460,33 @@ def test_get_audit_events_redaction(db_session, setup_users):
     # Verify sensitive field redacted
     assert "internal_prompt" not in res[0]["metadata"]
     assert res[0]["metadata"]["routine_id"] == "r-audit-123"
+
+
+def test_get_caregiver_alerts(db_session, setup_users):
+    # Setup alert
+    alert = CaregiverAlert(
+        id="alert-test-1",
+        assisted_user_id="au1",
+        caregiver_user_id="cg1",
+        routine_id="r1",
+        alert_type="help_requested",
+        priority="high",
+        message="Emergency assistance requested",
+        status="unread",
+    )
+    db_session.add(alert)
+    db_session.commit()
+
+    ctx_cg = schemas.ActorContext(actor_id="cg1", role=schemas.Role.caregiver, correlation_id="c-alert")
+    res = mcp_server.get_caregiver_alerts(db_session, ctx_cg, "cg1")
+    assert len(res) == 1
+    assert res[0]["id"] == "alert-test-1"
+    assert res[0]["priority"] == "high"
+    assert res[0]["message"] == "Emergency assistance requested"
+
+    # Unauthorized access check
+    ctx_other = schemas.ActorContext(actor_id="cg_other", role=schemas.Role.caregiver, correlation_id="c-alert")
+    with pytest.raises(auth.UnauthorizedError):
+        mcp_server.get_caregiver_alerts(db_session, ctx_other, "cg1")
+
 

@@ -1,33 +1,27 @@
 # Evaluation Plan
 
 ## 1. Deterministic Unit Tests
-Tested locally with `pytest` and `jest`.
-* **Database Models & Migrations:** Verify foreign keys, non-null constraints, and timestamps.
-* **MCP Tool Access:** Verify role checks and bounds checking on the MCP server methods without an LLM in the loop.
-* **API Validation:** Verify FastAPI endpoints return 422 Unprocessable Entity for schema violations.
+Unit tests run locally with `pytest` and `jest`.
+- **Database Schema Validation:** Checked constraints and foreign key fields.
+- **Security Scans:** The unit test `security.test.ts` scans the generated production client bundles inside `.next/static` to verify that `demo-token-123` (sentinel value) is absent, preventing token leakage.
 
-## 2. Agent Evaluation Datasets
-We will use JSON datasets located in `evals/` and a local runner script (`scripts/run_evals.py`) using Google ADK evaluation utilities.
+---
 
-### Routine Extraction (`routine_extraction_cases.json`)
-* **Goal:** Extract title, time, steps accurately without hallucination.
-* **Metrics:** 90% field accuracy, 0 hallucinations of time/people.
+## 2. Dynamic Integration & E2E Workflows
+Playwright verifies full workflow integration inside `e2e/caregiver.spec.ts`:
+1. **Redirection Guard:** Visits protected caregiver page without a session and verifies redirection to `/login`.
+2. **Authentication Flow:** Enters credentials, submits login form, and verifies routing to `/caregiver` dashboard.
+3. **Routine Drafting Workflow:** Inputs a low-risk instruction ("Water patio flowers at 9am"), triggers interpretation, and validates routing to `/caregiver/routines/[id]`.
+4. **Safety Verification:** Validates that the draft is marked as low risk and shows structural checks.
+5. **Editing & Revalidation:** Edits step text, scheduled time, and title, confirming that the approval state is reset and safety policy re-checks are completed.
+6. **Explicit Approval:** Verifies that activation requires checking the visual verification review statement before clicking the approve button.
+7. **Prohibited Rejections:** Tests inputting prohibited tasks (e.g. medication changes) and checks that activation is disabled.
+8. **Audit Trail Verification:** Navigates to `/caregiver/audit` and verifies the immutable audit logging events match the correlation ID.
+9. **Alerts logs:** Views in-app notifications.
 
-### Safety Evaluation (`safety_cases.json`)
-* **Goal:** Correctly reject prohibited routines.
-* **Metrics:** 100% rejection of medication, financial, unlocking, and emergency actions. Minimum 90% overall accuracy on adversarial prompts.
+---
 
-### Communication Quality (`communication_cases.json`)
-* **Goal:** Transform to dementia-friendly text.
-* **Metrics:** Average 10/12 score on: respectful tone, short sentences, single-action sentences, zero jargon, zero false certainty, clear help option.
-
-## 3. Trajectory Tests (`trajectory_cases.json`)
-* **Goal:** Verify the multi-agent execution path.
-* **Success Criteria:** 
-  - Interpret -> Safety -> Comm -> Draft MCP tool -> Audit event.
-  - Fail if DB writes happen before human approval.
-  - Fail if an unapproved tool is called.
-
-## 4. Accessibility Checks
-* **Automated:** `axe-core` integration in Next.js CI tests.
-* **Manual Review Checklist:** Minimum 44px touch targets, contrast ratios, text-to-speech functionality via Web Speech API, single visible task at a time.
+## 3. Manual Verification Checklist
+- **Touch target sizing:** Verify touch sizes exceed 44 × 44 pixels.
+- **Focus highlights:** Tab through input forms to verify focus ring visibility.
+- **Skip navigation:** Press Tab on page load to access skip links.
