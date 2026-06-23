@@ -217,3 +217,69 @@ async def list_caregiver_routines(
         context
     )
     return result
+
+
+class HelpRequestInput(BaseModel):
+    routine_id: str
+    routine_title: str = "a routine"
+
+
+@router.post("/users/{user_id}/help")
+async def request_help(
+    user_id: str,
+    payload: HelpRequestInput,
+    context: ActorContext = Depends(get_actor_context)
+):
+    """Assisted user requests help: marks routine status + creates caregiver alert."""
+    from ..mcp_client import call_mcp_tool
+
+    # 1. Mark routine status as help_requested
+    await call_mcp_tool(
+        "mark_routine_status",
+        {"routine_id": payload.routine_id, "status": "help_requested"},
+        context
+    )
+
+    # 2. Create in-app caregiver alert
+    await call_mcp_tool(
+        "create_caregiver_alert",
+        {
+            "assisted_user_id": user_id,
+            "routine_id": payload.routine_id,
+            "alert_type": "help_requested",
+            "message": f"Maria requested help with: {payload.routine_title}.",
+        },
+        context
+    )
+
+    return {"status": "alert_created", "alert_type": "help_requested"}
+
+
+class ContactRequestInput(BaseModel):
+    routine_id: Optional[str] = None
+
+
+@router.post("/users/{user_id}/contact")
+async def request_contact(
+    user_id: str,
+    payload: ContactRequestInput,
+    context: ActorContext = Depends(get_actor_context)
+):
+    """Assisted user requests contact with caregiver: creates in-app alert only."""
+    from ..mcp_client import call_mcp_tool
+
+    routine_id = payload.routine_id or "00000000-0000-0000-0000-000000000000"
+
+    await call_mcp_tool(
+        "create_caregiver_alert",
+        {
+            "assisted_user_id": user_id,
+            "routine_id": routine_id,
+            "alert_type": "contact_requested",
+            "message": "Maria has asked to be contacted by her caregiver.",
+        },
+        context
+    )
+
+    return {"status": "alert_created", "alert_type": "contact_requested"}
+

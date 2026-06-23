@@ -20,7 +20,7 @@ DEMO_TOKENS: dict[str, dict[str, Any]] = {
         "authorization_scope": "full"
     },
     "assisted_user_demo_token": {
-        "actor_id": "au-456",
+        "actor_id": "user-assisted-maria",
         "role": "assisted_user",
         "caregiver_relationship_scope": [],
         "authorization_scope": "self"

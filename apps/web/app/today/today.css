@@ -1,0 +1,504 @@
+/*
+ * today.css — Accessible assisted-user interface styles
+ *
+ * Design principles:
+ *   • Calm, warm palette — avoid harsh brightness or high-saturation colours
+ *   • Minimum 64px interactive touch targets
+ *   • High contrast text (WCAG AA: ≥4.5:1 ratio)
+ *   • Large, legible typography (base ≥20px, headings ≥28px)
+ *   • No distracting animations (transitions ≤150ms, no looping effects)
+ *   • Single-column layout, centred, max-width 600px
+ */
+
+/* ── CSS Custom Properties ─────────────────────────────────────────────────── */
+.today-page-root {
+  --today-bg: #fdf8f3;          /* warm off-white */
+  --today-surface: #ffffff;
+  --today-surface-muted: #f5f0ea;
+  --today-border: #d9cfc5;
+  --today-text-primary: #1c1008; /* near-black warm */
+  --today-text-secondary: #5a4a37;
+  --today-text-muted: #8a7a6a;
+
+  --today-accent: #3a5f8a;      /* calm slate-blue */
+  --today-accent-hover: #2d4e74;
+  --today-accent-text: #ffffff;
+
+  --today-green: #1f6b45;       /* done button */
+  --today-green-bg: #e6f5ec;
+  --today-green-hover: #175638;
+
+  --today-amber: #7a4a10;       /* help button */
+  --today-amber-bg: #fef3e2;
+  --today-amber-hover: #5c3608;
+
+  --today-blue: #1e4d7a;        /* contact button */
+  --today-blue-bg: #e4eef8;
+  --today-blue-hover: #163a5c;
+
+  --today-success-bg: #e6f5ec;
+  --today-success-border: #4caf50;
+  --today-success-text: #1f6b45;
+
+  --today-error-bg: #fdecea;
+  --today-error-border: #ef5350;
+  --today-error-text: #8b1a1a;
+
+  --today-btn-min-height: 64px;
+  --today-btn-radius: 12px;
+  --today-btn-font-size: 1.25rem;  /* 20px */
+  --today-btn-font-weight: 600;
+
+  /* Root layout */
+  min-height: 100vh;
+  background: var(--today-bg);
+  color: var(--today-text-primary);
+  font-family: var(--font-geist-sans), Georgia, serif;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Demo Banner ────────────────────────────────────────────────────────────── */
+.today-demo-banner {
+  background: #fffbeb;
+  border-bottom: 1px solid #d97706;
+  color: #78350f;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 0.625rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.today-demo-banner-icon {
+  width: 1.125rem;
+  height: 1.125rem;
+  flex-shrink: 0;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+.today-header {
+  background: var(--today-surface);
+  border-bottom: 1px solid var(--today-border);
+  padding: 1rem 1.5rem;
+}
+
+.today-header-inner {
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.today-header-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: var(--today-accent);
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+
+.today-header-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--today-text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.today-header-sub {
+  font-size: 0.9rem;
+  color: var(--today-text-muted);
+  margin: 0;
+}
+
+/* ── Main area ──────────────────────────────────────────────────────────────── */
+.today-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem 1rem 3rem;
+}
+
+/* ── Root container ─────────────────────────────────────────────────────────── */
+.today-root {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Live clock ─────────────────────────────────────────────────────────────── */
+.today-clock {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--today-text-secondary);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* ── Pagination indicator ───────────────────────────────────────────────────── */
+.today-pagination {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--today-text-muted);
+  margin: 0;
+}
+
+/* ── Routine card ───────────────────────────────────────────────────────────── */
+.today-card {
+  background: var(--today-surface);
+  border: 1px solid var(--today-border);
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 2px 8px rgba(60, 40, 10, 0.06);
+}
+
+.today-card-header {
+  margin-bottom: 1.25rem;
+}
+
+.today-card-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--today-text-primary);
+  line-height: 1.25;
+  margin: 0 0 0.375rem;
+}
+
+.today-card-time {
+  font-size: 1rem;
+  color: var(--today-text-muted);
+  margin: 0;
+}
+
+/* ── Steps list ─────────────────────────────────────────────────────────────── */
+.today-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.today-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  background: var(--today-surface-muted);
+  border-radius: 10px;
+  padding: 0.875rem 1rem;
+}
+
+.today-step-num {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--today-accent);
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.today-step-text {
+  font-size: 1.125rem;
+  line-height: 1.5;
+  color: var(--today-text-primary);
+}
+
+/* ── Listen button row ──────────────────────────────────────────────────────── */
+.today-listen-row {
+  margin-top: 1.25rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────────── */
+.today-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: var(--today-btn-min-height);
+  padding: 0 1.5rem;
+  border: none;
+  border-radius: var(--today-btn-radius);
+  font-size: var(--today-btn-font-size);
+  font-weight: var(--today-btn-font-weight);
+  cursor: pointer;
+  transition: background 120ms ease, transform 80ms ease;
+  text-align: center;
+  line-height: 1.3;
+  width: 100%;
+}
+
+.today-btn:focus-visible {
+  outline: 3px solid var(--today-accent);
+  outline-offset: 3px;
+}
+
+.today-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.today-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Done — green */
+.today-btn-done {
+  background: var(--today-green-bg);
+  color: var(--today-green);
+  border: 2px solid var(--today-green);
+}
+
+.today-btn-done:not(:disabled):hover {
+  background: var(--today-green);
+  color: white;
+}
+
+/* Help me — amber */
+.today-btn-help {
+  background: var(--today-amber-bg);
+  color: var(--today-amber);
+  border: 2px solid var(--today-amber);
+}
+
+.today-btn-help:not(:disabled):hover {
+  background: var(--today-amber);
+  color: white;
+}
+
+/* Contact — blue */
+.today-btn-contact {
+  background: var(--today-blue-bg);
+  color: var(--today-blue);
+  border: 2px solid var(--today-blue);
+}
+
+.today-btn-contact:not(:disabled):hover {
+  background: var(--today-blue);
+  color: white;
+}
+
+/* Listen */
+.today-btn-listen {
+  background: var(--today-surface-muted);
+  color: var(--today-text-secondary);
+  border: 2px solid var(--today-border);
+  font-size: 1rem;
+  min-height: 48px;
+  width: auto;
+  padding: 0 1.25rem;
+}
+
+.today-btn-listen:not(:disabled):hover {
+  background: var(--today-surface);
+  border-color: var(--today-accent);
+  color: var(--today-accent);
+}
+
+/* Neutral (feedback dismiss) */
+.today-btn-neutral {
+  background: var(--today-accent);
+  color: var(--today-accent-text);
+  border: 2px solid transparent;
+}
+
+.today-btn-neutral:not(:disabled):hover {
+  background: var(--today-accent-hover);
+}
+
+/* Nav arrows */
+.today-btn-nav {
+  background: var(--today-surface-muted);
+  color: var(--today-text-secondary);
+  border: 2px solid var(--today-border);
+  font-size: 1rem;
+  min-height: 52px;
+  width: auto;
+  flex: 1;
+}
+
+.today-btn-nav:not(:disabled):hover {
+  background: var(--today-surface);
+  border-color: var(--today-accent);
+  color: var(--today-accent);
+}
+
+/* ── Actions grid ───────────────────────────────────────────────────────────── */
+.today-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+/* ── Nav row ────────────────────────────────────────────────────────────────── */
+.today-nav {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────────── */
+.today-empty {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.today-empty-card {
+  background: var(--today-surface);
+  border: 1px solid var(--today-border);
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  width: 100%;
+}
+
+.today-empty-icon {
+  display: block;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  color: var(--today-green);
+}
+
+.today-empty-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--today-text-primary);
+  margin: 0 0 0.75rem;
+  line-height: 1.3;
+}
+
+.today-empty-body {
+  font-size: 1.125rem;
+  color: var(--today-text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Feedback overlay ───────────────────────────────────────────────────────── */
+.today-feedback {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 2rem 1rem;
+}
+
+.today-feedback-card {
+  border: 2px solid;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.today-feedback-success {
+  background: var(--today-success-bg);
+  border-color: var(--today-success-border);
+}
+
+.today-feedback-error {
+  background: var(--today-error-bg);
+  border-color: var(--today-error-border);
+}
+
+.today-feedback-icon {
+  font-size: 2.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: inherit;
+}
+
+.today-feedback-success .today-feedback-icon {
+  color: var(--today-success-text);
+}
+
+.today-feedback-error .today-feedback-icon {
+  color: var(--today-error-text);
+}
+
+.today-feedback-message {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 38ch;
+}
+
+.today-feedback-success .today-feedback-message {
+  color: var(--today-success-text);
+}
+
+.today-feedback-error .today-feedback-message {
+  color: var(--today-error-text);
+}
+
+/* ── Fetch error ────────────────────────────────────────────────────────────── */
+.today-fetch-error {
+  background: var(--today-error-bg);
+  border: 2px solid var(--today-error-border);
+  border-radius: 14px;
+  padding: 2rem;
+  text-align: center;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+.today-fetch-error-msg {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--today-error-text);
+  margin: 0 0 0.625rem;
+}
+
+.today-fetch-error-hint {
+  font-size: 1rem;
+  color: var(--today-text-secondary);
+  margin: 0;
+}
+
+/* ── Responsive: Tablet and up ──────────────────────────────────────────────── */
+@media (min-width: 480px) {
+  .today-card {
+    padding: 2.25rem;
+  }
+
+  .today-card-title {
+    font-size: 2rem;
+  }
+}
