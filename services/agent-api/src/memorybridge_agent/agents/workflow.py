@@ -36,8 +36,23 @@ async def node_sanitize(state: Dict[str, Any]) -> Dict[str, Any]:
 
 async def node_initial_policy(state: Dict[str, Any]) -> Dict[str, Any]:
     text = state["sanitized_text"].lower()
-    # Initial deterministic structural policy
-    prohibited_keywords = ["911", "medication", "pill", "dose", "bank", "buy"]
+    # Deterministic structural policy — must stay in sync with safety.py PROHIBITED_RULES.
+    # Phase 5: expanded to cover door unlock variants, medical decision language, aspirin.
+    prohibited_keywords = [
+        # medication
+        "911", "medication", "pill", "dose", "tablet", "syringe", "prescription",
+        "aspirin", "ibuprofen", "paracetamol",
+        # finance
+        "bank", "transfer", "money", "pay", "credit card", "buy", "payment",
+        # doors
+        "unlock", "open the door", "front door",
+        # appliances
+        "stove", "oven", "burner",
+        # emergency
+        "ambulance", "emergency", "hospital",
+        # medical decision
+        "blood pressure", "diagnosis", "dizziness is", "medical advice", "doctor says",
+    ]
     if any(kw in text for kw in prohibited_keywords):
         state["structural_policy_result"] = "prohibited"
     else:
@@ -50,12 +65,21 @@ async def node_normalized_policy(state: Dict[str, Any]) -> Dict[str, Any]:
     if not plan:
         return state
     text = (plan.title + " " + " ".join(plan.steps)).lower()
-    prohibited_keywords = ["911", "medication", "pill", "dose", "bank", "buy"]
+    prohibited_keywords = [
+        "911", "medication", "pill", "dose", "tablet", "syringe", "prescription",
+        "aspirin", "ibuprofen", "paracetamol",
+        "bank", "transfer", "money", "pay", "credit card", "buy", "payment",
+        "unlock", "open the door", "front door",
+        "stove", "oven", "burner",
+        "ambulance", "emergency", "hospital",
+        "blood pressure", "diagnosis", "medical advice", "doctor says",
+    ]
     if any(kw in text for kw in prohibited_keywords):
         state["normalized_policy_result"] = "prohibited"
     else:
         state["normalized_policy_result"] = "allow"
     return state
+
 
 async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
     # Formulate MCP call

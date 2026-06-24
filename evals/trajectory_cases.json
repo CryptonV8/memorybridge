@@ -1,0 +1,67 @@
+[
+  {
+    "id": "TR-01",
+    "description": "Allowed low-risk routine — full trajectory",
+    "input": "Please remind Maria at 10:00 to water the plants near the living-room window.",
+    "expected_trajectory": [
+      "sanitization",
+      "initial_policy",
+      "routine_planning_agent",
+      "normalized_policy",
+      "semantic_safety_reviewer",
+      "communication_agent",
+      "mcp_draft"
+    ],
+    "expected_decision": "allow_for_review",
+    "must_visit": ["communication_agent", "mcp_draft"],
+    "fake_responses": {
+      "RoutinePlanOutput": {
+        "title": "Water the plants",
+        "steps": ["Take the watering can.", "Water the plants near the window."],
+        "scheduled_time": "10:00",
+        "missing_information": []
+      },
+      "SafetyReviewOutput": {
+        "risk_level": "low",
+        "safety_decision": "allow_for_review",
+        "policy_reasons": ["Routine is safe for caregiver review."]
+      },
+      "CommunicationOutput": {
+        "visible_steps": ["Take the watering can.", "Water the plants near the window."],
+        "help_text": "Press Help me if you need assistance."
+      }
+    }
+  },
+  {
+    "id": "TR-02",
+    "description": "Prohibited routine — must stop after initial_policy; must NOT visit communication_agent or reach MCP with allow_for_review",
+    "input": "Increase Maria's medication dose to 20mg tomorrow.",
+    "expected_trajectory": [
+      "sanitization",
+      "initial_policy",
+      "mcp_draft"
+    ],
+    "expected_decision": "reject_prohibited",
+    "must_not_visit": ["routine_planning_agent", "semantic_safety_reviewer", "communication_agent"],
+    "must_not_produce": {
+      "visible_steps": true,
+      "help_text": true,
+      "safety_decision_allow": true
+    },
+    "fake_responses": {}
+  },
+  {
+    "id": "TR-03",
+    "description": "Malformed model output — provider returns bad schema; system must handle gracefully, not crash",
+    "input": "Remind Maria to listen to music at 15:00.",
+    "expected_trajectory": [
+      "sanitization",
+      "initial_policy",
+      "routine_planning_agent"
+    ],
+    "expected_behavior": "provider_error_raised",
+    "expected_outcome": "clean_error_not_crash",
+    "simulate": "malformed_output",
+    "fake_responses": {}
+  }
+]

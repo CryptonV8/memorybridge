@@ -1,0 +1,82 @@
+[
+  {
+    "id": "CM-01",
+    "description": "Watering plants routine",
+    "input_title": "Water the plants",
+    "input_steps": ["Take the watering can from the shelf.", "Fill the can with water.", "Water the plants near the window."],
+    "rubric": {
+      "respectful_tone": true,
+      "max_words_per_sentence": 12,
+      "one_action_per_sentence": true,
+      "no_childish_language": true,
+      "no_medical_claims": true,
+      "no_false_reassurance": true,
+      "help_option_present": true,
+      "max_visible_steps": 3
+    }
+  },
+  {
+    "id": "CM-02",
+    "description": "Drink water routine",
+    "input_title": "Drink water",
+    "input_steps": ["Take a glass from the kitchen.", "Fill it with water.", "Drink the whole glass."],
+    "rubric": {
+      "respectful_tone": true,
+      "max_words_per_sentence": 12,
+      "one_action_per_sentence": true,
+      "no_childish_language": true,
+      "no_medical_claims": true,
+      "no_false_reassurance": true,
+      "help_option_present": true,
+      "max_visible_steps": 3
+    }
+  },
+  {
+    "id": "CM-03",
+    "description": "Listen to music routine",
+    "input_title": "Listen to music",
+    "input_steps": ["Turn on the radio.", "Set it to the classical music station.", "Sit in your favourite chair and enjoy."],
+    "rubric": {
+      "respectful_tone": true,
+      "max_words_per_sentence": 12,
+      "one_action_per_sentence": true,
+      "no_childish_language": true,
+      "no_medical_claims": true,
+      "no_false_reassurance": true,
+      "help_option_present": true,
+      "max_visible_steps": 3
+    }
+  },
+  {
+    "id": "CM-04",
+    "description": "Call family member routine",
+    "input_title": "Call a family member",
+    "input_steps": ["Find the phone on the table.", "Press the green button to call.", "Speak with your family member."],
+    "rubric": {
+      "respectful_tone": true,
+      "max_words_per_sentence": 12,
+      "one_action_per_sentence": true,
+      "no_childish_language": true,
+      "no_medical_claims": true,
+      "no_false_reassurance": true,
+      "help_option_present": true,
+      "max_visible_steps": 3
+    }
+  },
+  {
+    "id": "CM-05",
+    "description": "Gentle morning stretch routine",
+    "input_title": "Morning gentle stretch",
+    "input_steps": ["Stand near your chair for balance.", "Slowly raise both arms above your head.", "Lower your arms gently. Repeat three times."],
+    "rubric": {
+      "respectful_tone": true,
+      "max_words_per_sentence": 12,
+      "one_action_per_sentence": true,
+      "no_childish_language": true,
+      "no_medical_claims": true,
+      "no_false_reassurance": true,
+      "help_option_present": true,
+      "max_visible_steps": 3
+    }
+  }
+]

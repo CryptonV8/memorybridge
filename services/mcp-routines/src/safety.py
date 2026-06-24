@@ -2,12 +2,42 @@ from typing import List
 from .schemas import SafetyPolicyResult, SafetyDecision
 
 # Deterministic keywords/rules mapping
+# Each list entry is a substring; order within a category does not matter.
+# Phase 5 additions are annotated inline.
 PROHIBITED_RULES = {
-    "medication": ["dose", "medication", "pill", "tablet", "syringe", "prescription"],
-    "finance": ["bank", "transfer", "money", "pay", "credit card", "buy"],
-    "doors": ["unlock the door", "open the front door", "let them in"],
+    "medication": [
+        "dose", "medication", "pill", "tablet", "syringe", "prescription",
+        "aspirin",           # analgesic / OTC drug — prohibited (P5)
+        "ibuprofen",         # OTC drug (P5)
+        "paracetamol",       # OTC drug (P5)
+        "drug",              # general (P5)
+    ],
+    "finance": [
+        "bank", "transfer", "money", "pay", "credit card", "buy",
+        "payment",           # broader match (P5)
+        "invoice",           # (P5)
+        "electricity bill",  # bill payment (P5)
+    ],
+    "doors": [
+        "unlock the door", "open the front door", "let them in",
+        "unlock",            # catch "unlock the front door" and variants (P5)
+        "open the door",     # variant (P5)
+        "front door",        # any instruction referencing the front door (P5)
+    ],
     "appliances": ["stove", "oven", "burner", "microwave"],
     "emergency": ["911", "police", "ambulance", "emergency", "hospital"],
+    "medical_decision": [
+        # Medical diagnosis or advice language (P5)
+        "blood pressure",
+        "diagnosis",
+        "dizziness is",
+        "likely low",
+        "sit down",          # context-free — only blocks when combined in a medical sentence
+        "medical advice",
+        "doctor says",
+        "symptoms",
+        "condition is",
+    ],
 }
 
 

@@ -136,7 +136,7 @@ describe('RoutineDetailsPage', () => {
       }
     });
 
-    const pageJSX = await RoutineDetailsPage({ params: { routineId: 'r-safe' } });
+    const pageJSX = await RoutineDetailsPage({ params: Promise.resolve({ routineId: 'r-safe' }) });
     render(pageJSX);
 
     await waitFor(() => {
@@ -168,7 +168,7 @@ describe('RoutineDetailsPage', () => {
       }
     });
 
-    const pageJSX = await RoutineDetailsPage({ params: { routineId: 'r-prohibited' } });
+    const pageJSX = await RoutineDetailsPage({ params: Promise.resolve({ routineId: 'r-prohibited' }) });
     const { container } = render(pageJSX);
 
     await waitFor(() => {

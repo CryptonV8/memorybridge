@@ -9,6 +9,9 @@ const customJestConfig = {
   testEnvironment: 'jest-environment-jsdom',
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    // Mock Next.js server-only APIs that cannot run in jsdom environment
+    '^next/cache$': '<rootDir>/__mocks__/next/cache.js',
+    '^next/headers$': '<rootDir>/__mocks__/next/headers.js',
   },
   testPathIgnorePatterns: ['<rootDir>/e2e/'],
 };

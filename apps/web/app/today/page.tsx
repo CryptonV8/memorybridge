@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 };
 
 export default async function TodayPage() {
-  let routines = [];
+  let routines: Awaited<ReturnType<typeof getTodayRoutines>> = [];
   let fetchError: string | null = null;
 
   try {
