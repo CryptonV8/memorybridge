@@ -3,7 +3,7 @@ import path from 'path';
 
 describe('Security: Token Exposure Scan', () => {
   it('ensures DEMO_CAREGIVER_TOKEN does not leak into the production client-side bundles', () => {
-    const token = 'demo-token-123';
+    const token = process.env.DEMO_CAREGIVER_TOKEN || 'test-sentinel-cg-token';
     const staticDir = path.resolve(__dirname, '../.next/static');
 
     if (!fs.existsSync(staticDir)) {

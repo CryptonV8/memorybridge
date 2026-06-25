@@ -156,35 +156,28 @@ Create each secret by piping the value from stdin. **Never** echo secrets in she
 ```bash
 export PROJECT="your-project-id"
 
-# Backend secrets
-printf '%s' "YOUR_DATABASE_URL" | \
-  gcloud secrets create memorybridge-database-url \
-    --data-file=- --project ${PROJECT}
+# Example for one secret: read securely without echoing to shell history
+echo -n "Enter backend DATABASE_URL: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-database-url --data-file=- --project ${PROJECT}
 
-printf '%s' "YOUR_MIGRATION_DATABASE_URL" | \
-  gcloud secrets create memorybridge-migration-database-url \
-    --data-file=- --project ${PROJECT}
+echo -n "Enter MIGRATION_DATABASE_URL: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-migration-database-url --data-file=- --project ${PROJECT}
 
-printf '%s' "YOUR_GOOGLE_API_KEY" | \
-  gcloud secrets create memorybridge-google-api-key \
-    --data-file=- --project ${PROJECT}
+echo -n "Enter GOOGLE_API_KEY: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-google-api-key --data-file=- --project ${PROJECT}
 
-# Web secrets
-printf '%s' "YOUR_SESSION_SECRET" | \
-  gcloud secrets create memorybridge-session-secret \
-    --data-file=- --project ${PROJECT}
+echo -n "Enter SESSION_SECRET: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-session-secret --data-file=- --project ${PROJECT}
 
-printf '%s' "YOUR_DEMO_CAREGIVER_TOKEN" | \
-  gcloud secrets create memorybridge-caregiver-token \
-    --data-file=- --project ${PROJECT}
+echo -n "Enter DEMO_CAREGIVER_TOKEN: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-caregiver-token --data-file=- --project ${PROJECT}
 
-printf '%s' "YOUR_DEMO_ASSISTED_USER_TOKEN" | \
-  gcloud secrets create memorybridge-assisted-user-token \
-    --data-file=- --project ${PROJECT}
+echo -n "Enter DEMO_ASSISTED_USER_TOKEN: " && read -s SECRET_VAL && echo "" && \
+  printf '%s' "$SECRET_VAL" | gcloud secrets create memorybridge-assisted-user-token --data-file=- --project ${PROJECT}
 
-# Grant backend SA access to backend secrets only
+# Grant backend SA access to its secrets
 BACKEND_SA="memorybridge-backend-sa@${PROJECT}.iam.gserviceaccount.com"
-for SECRET in memorybridge-database-url memorybridge-google-api-key; do
+for SECRET in memorybridge-database-url memorybridge-google-api-key memorybridge-caregiver-token memorybridge-assisted-user-token; do
   gcloud secrets add-iam-policy-binding ${SECRET} \
     --member "serviceAccount:${BACKEND_SA}" \
     --role "roles/secretmanager.secretAccessor" \

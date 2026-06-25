@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     # Provider selection: "gemini" or "fake"
     agent_provider: str = Field(default="fake")
 
+    # Demo Authentication Tokens
+    demo_caregiver_token: str = Field(default="test-sentinel-cg-token")
+    demo_assisted_user_token: str = Field(default="test-sentinel-au-token")
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

@@ -5,27 +5,23 @@ from pydantic import BaseModel
 
 security = HTTPBearer()
 
-# Demo Static Token Lookup
-DEMO_TOKENS: dict[str, dict[str, Any]] = {
-    "demo-token-123": {
-        "actor_id": "user-caregiver-anna",
-        "role": "caregiver",
-        "caregiver_relationship_scope": ["user-assisted-maria"],
-        "authorization_scope": "full"
-    },
-    "caregiver_demo_token": {
-        "actor_id": "cg-123",
-        "role": "caregiver",
-        "caregiver_relationship_scope": ["au-456"],
-        "authorization_scope": "full"
-    },
-    "assisted_user_demo_token": {
-        "actor_id": "user-assisted-maria",
-        "role": "assisted_user",
-        "caregiver_relationship_scope": [],
-        "authorization_scope": "self"
+from .config import settings
+
+def get_demo_tokens() -> dict[str, dict[str, Any]]:
+    return {
+        settings.demo_caregiver_token: {
+            "actor_id": "user-caregiver-anna",
+            "role": "caregiver",
+            "caregiver_relationship_scope": ["user-assisted-maria"],
+            "authorization_scope": "full"
+        },
+        settings.demo_assisted_user_token: {
+            "actor_id": "user-assisted-maria",
+            "role": "assisted_user",
+            "caregiver_relationship_scope": [],
+            "authorization_scope": "self"
+        }
     }
-}
 
 class ActorContext(BaseModel):
     actor_id: str
@@ -42,10 +38,11 @@ def get_actor_context(
     credentials: HTTPAuthorizationCredentials = Security(security)
 ) -> ActorContext:
     token = credentials.credentials
-    if token not in DEMO_TOKENS:
+    demo_tokens = get_demo_tokens()
+    if token not in demo_tokens:
         raise HTTPException(status_code=401, detail="Invalid or missing demo token")
     
-    actor_data = DEMO_TOKENS[token]
+    actor_data = demo_tokens[token]
     return ActorContext(
         actor_id=actor_data["actor_id"],
         role=actor_data["role"],

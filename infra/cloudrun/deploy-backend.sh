@@ -85,7 +85,9 @@ gcloud run deploy "${SERVICE_NAME}" \
   --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,AGENT_PROVIDER=gemini,MEMORYBRIDGE_MODEL=gemini-2.5-flash" \
   --set-secrets "\
 DATABASE_URL=memorybridge-database-url:latest,\
-GOOGLE_API_KEY=memorybridge-google-api-key:latest" \
+GOOGLE_API_KEY=memorybridge-google-api-key:latest,\
+DEMO_CAREGIVER_TOKEN=memorybridge-caregiver-token:latest,\
+DEMO_ASSISTED_USER_TOKEN=memorybridge-assisted-user-token:latest" \
   --platform managed \
   --quiet
 

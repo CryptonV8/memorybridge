@@ -46,7 +46,7 @@ def test_get_routine_success(mock_call_mcp):
         "status": "draft"
     }
 
-    headers = {"Authorization": "Bearer caregiver_demo_token"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
     r = client.get("/api/routines/r-123", headers=headers)
     
     assert r.status_code == 200
@@ -68,7 +68,7 @@ def test_update_routine_patch(mock_call_mcp):
         "status": "draft"
     }
 
-    headers = {"Authorization": "Bearer caregiver_demo_token"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
     payload = {"title": "New Title", "steps_json": ["Step 1"]}
     r = client.patch("/api/routines/r-123", json=payload, headers=headers)
 
@@ -89,7 +89,7 @@ def test_reject_routine_post(mock_call_mcp):
         "status": "rejected"
     }
 
-    headers = {"Authorization": "Bearer caregiver_demo_token"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
     r = client.post("/api/routines/r-123/reject", headers=headers)
 
     assert r.status_code == 200
@@ -106,7 +106,7 @@ def test_list_caregiver_routines(mock_call_mcp):
         "routines": [{"id": "r-123", "title": "Water Plants"}]
     }
 
-    headers = {"Authorization": "Bearer caregiver_demo_token"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
     r = client.get("/api/caregivers/me/routines?status=draft&assisted_user_id=au-456", headers=headers)
 
     assert r.status_code == 200
@@ -123,7 +123,7 @@ def test_zero_llm_calls_on_rejection_and_approval(mock_call_mcp, mocker):
     # Mock LLM provider to ensure it's not even instantiated or called
     mock_provider = mocker.patch("src.memorybridge_agent.agents.providers.FakeProvider.generate_structured")
     
-    headers = {"Authorization": "Bearer caregiver_demo_token"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
     
     # Call approve
     mock_call_mcp.return_value = {"status": "active"}
@@ -137,3 +137,17 @@ def test_zero_llm_calls_on_rejection_and_approval(mock_call_mcp, mocker):
 
     # Ensure no LLM methods were called
     mock_provider.assert_not_called()
+
+
+def test_role_separation(mock_call_mcp):
+    # Caregiver token gets caregiver role
+    headers_cg = {"Authorization": "Bearer test-sentinel-cg-token"}
+    client.get("/api/routines/r-123", headers=headers_cg)
+    args, _ = mock_call_mcp.call_args
+    assert args[2].role == "caregiver"
+
+    # Assisted User token gets assisted_user role
+    headers_au = {"Authorization": "Bearer test-sentinel-au-token"}
+    client.get("/api/users/user-assisted-maria/today", headers=headers_au)
+    args, _ = mock_call_mcp.call_args
+    assert args[2].role == "assisted_user"

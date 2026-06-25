@@ -123,7 +123,7 @@ import path from 'path';
 
 describe('Security: Assisted-user token non-exposure', () => {
   it('ensures DEMO_ASSISTED_USER_TOKEN does not leak into client-side bundles', () => {
-    const token = 'assisted_user_demo_token';
+    const token = process.env.DEMO_ASSISTED_USER_TOKEN || 'test-sentinel-au-token';
     const staticDir = path.resolve(__dirname, '../.next/static');
 
     if (!fs.existsSync(staticDir)) {
