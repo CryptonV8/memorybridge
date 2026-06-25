@@ -1,0 +1,57 @@
+# MemoryBridge backend .dockerignore
+# Prevents secrets, caches, tests, and local databases from entering the image.
+
+# Secrets and local config
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Python caches
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+
+# Local virtual environments
+**/venv/
+**/.venv/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Test artefacts
+**/tests/
+**/test-results/
+**/coverage/
+**/.coverage
+
+# Git history
+.git/
+.gitignore
+
+# Node (not needed in backend image)
+**/node_modules/
+**/.next/
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation / screenshots (not needed at runtime)
+docs/
+specs/
+evals/
+scripts/
+*.md
+*.png
+*.jpg
+*.webp
+
+# CI / build artefacts
+infra/
+apps/

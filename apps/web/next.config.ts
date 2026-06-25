@@ -47,6 +47,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Enable standalone output for Docker — copies only the files needed to run
+  // the server, avoiding bundling node_modules that are already in the image.
+  output: "standalone",
+
   async headers() {
     return [
       {
@@ -59,3 +63,4 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+

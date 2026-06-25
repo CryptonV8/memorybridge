@@ -1,0 +1,42 @@
+# MemoryBridge web .dockerignore
+# Prevents secrets, tests, build artefacts, and Git history from entering the image.
+
+# Secrets and local config
+.env
+.env.*
+.env.local
+.env.*.local
+
+# Build output (regenerated in builder stage)
+.next/
+out/
+
+# Test artefacts
+playwright-report/
+test-results/
+coverage/
+e2e/
+
+# Node
+node_modules/
+
+# Screenshots and media
+*.png
+*.jpg
+*.webp
+
+# Git history
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# TypeScript build cache
+tsconfig.tsbuildinfo
+
+# README and docs (not needed at runtime)
+*.md
+AGENTS.md
+CLAUDE.md

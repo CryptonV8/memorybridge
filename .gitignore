@@ -1,10 +1,23 @@
-# Python virtual environments
+# =====================================================================
+# MemoryBridge — root .gitignore
+# =====================================================================
+
+# ── Environment / Secrets ─────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+**/.env
+**/.env.*
+!**/.env.example
+
+# ── Python virtual environments ───────────────────────────────────────
 venv/
 .venv/
 env/
 .env/
 
-# Python cache and temporary files
+# ── Python cache and build artefacts ─────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
@@ -16,30 +29,28 @@ __pycache__/
 .coverage
 htmlcov/
 .tox/
+*.egg-info/
+dist/
+build/
 
-# Local databases & SQLite files
+# ── Local databases and SQLite files ─────────────────────────────────
 *.db
 *.sqlite
 *.sqlite3
 test.db
 
-# Environment variables files
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+# ── Node / Next.js ────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
 
-# IDE local files
+# ── Test artefacts ────────────────────────────────────────────────────
+playwright-report/
+test-results/
+coverage/
+
+# ── IDE ───────────────────────────────────────────────────────────────
 .vscode/
 .idea/
 *.swp
 *.swo
-
-# Node modules / UI dependencies
-node_modules/
-.next/
-dist/
-out/
-build/
-.next/

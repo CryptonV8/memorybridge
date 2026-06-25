@@ -3,7 +3,10 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     google_api_key: str = Field(default="")
-    memorybridge_model: str = Field(default="gemini-2.5-pro")
+    # gemini-2.5-flash: current recommended value for google-genai SDK 2.9.x / google-adk 2.3.x.
+    # gemini-2.5-pro remains available (legacy, supported until at least Oct 2026).
+    # Override via MEMORYBRIDGE_MODEL env var — not a secret, no need for Secret Manager.
+    memorybridge_model: str = Field(default="gemini-2.5-flash")
     log_level: str = Field(default="INFO")
     otlp_endpoint: str = Field(default="")
     

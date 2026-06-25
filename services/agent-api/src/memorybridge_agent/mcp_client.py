@@ -9,12 +9,27 @@ from .dependencies import ActorContext
 
 logger = logging.getLogger(__name__)
 
-# Derive the path to mcp-routines relative to this file
-# Assuming this file is at services/agent-api/src/memorybridge_agent/mcp_client.py
-# The mcp-routines folder is at services/mcp-routines
-AGENT_API_SRC = os.path.dirname(os.path.abspath(__file__))
-AGENT_API_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(AGENT_API_SRC)))
-MCP_ROUTINES_DIR = os.path.join(AGENT_API_ROOT, "mcp-routines")
+# ── MCP Routines directory resolution ────────────────────────────────────────
+# The MCP_ROUTINES_DIR environment variable takes precedence.
+# This is set in the Dockerfile (ENV MCP_ROUTINES_DIR=/app/services/mcp-routines)
+# so that the container does not rely on relative path derivation.
+#
+# Fallback (local development):
+#   this file → services/agent-api/src/memorybridge_agent/mcp_client.py
+#   three dirname() calls up → services/
+#   + "mcp-routines" → services/mcp-routines
+MCP_ROUTINES_DIR = os.environ.get("MCP_ROUTINES_DIR") or os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+    "mcp-routines",
+)
+
+# ── Python executable resolution ──────────────────────────────────────────────
+# In the Docker container, all packages are installed in the system site-packages.
+# Prefer a venv if it exists (local development); otherwise use sys.executable
+# (the same Python interpreter running the FastAPI process).
+_venv_python = os.path.join(MCP_ROUTINES_DIR, "venv", "bin", "python")
+MCP_PYTHON = _venv_python if os.path.isfile(_venv_python) else sys.executable
+
 
 async def call_mcp_tool(
     tool_name: str,
@@ -24,41 +39,49 @@ async def call_mcp_tool(
     """
     Calls an MCP tool on the mcp-routines server securely via stdio.
     Transparently injects the `_context` with the trusted ActorContext.
+    
+    The MCP server process is started fresh for each tool call and exits
+    when the async context manager exits.  No network port is used.
     """
     # Inject trusted context
     arguments["_context"] = context.model_dump()
-    
-    python_path = os.path.join(MCP_ROUTINES_DIR, "venv", "bin", "python")
+
     server_params = StdioServerParameters(
-        command=python_path,
-        args=["-m", "src.server"], # Assuming src.server is the entry point
-        env={"PYTHONPATH": "."}, # Ensuring imports work
-        # Setting CWD for the server process to the mcp-routines directory
+        command=MCP_PYTHON,
+        args=["-m", "src.server"],
+        env={
+            **os.environ,  # Inherit DATABASE_URL and other env vars
+            "PYTHONPATH": MCP_ROUTINES_DIR,
+        },
     )
-    
-    # We must explicitly set the working directory for the mcp-routines execution.
-    # Actually mcp.client.stdio.stdio_client doesn't natively expose cwd parameter in StdioServerParameters in some versions.
-    # We will temporarily change cwd or handle it by setting PYTHONPATH.
-    
-    logger.info(f"Invoking MCP tool {tool_name} with context ID {context.correlation_id}")
-    
-    # Let's run it from the mcp-routines directory
+
+    logger.info(
+        "Invoking MCP tool",
+        extra={
+            "tool_name": tool_name,
+            "correlation_id": context.correlation_id,
+            "actor_id": context.actor_id,
+        },
+    )
+
+    # We must run from the mcp-routines directory so relative imports work.
+    # Change directory temporarily; restore on exit.
     original_cwd = os.getcwd()
     try:
         os.chdir(MCP_ROUTINES_DIR)
-        
+
         async with stdio_client(server_params) as (read, write):
             async with ClientSession(read, write) as session:
                 await session.initialize()
-                
+
                 # Execute the tool
                 result = await session.call_tool(tool_name, arguments)
-                
+
                 # Unpack CallToolResult
                 if getattr(result, "isError", False):
                     error_msg = result.content[0].text if result.content else "Unknown MCP error"
                     raise RuntimeError(f"MCP tool error: {error_msg}")
-                
+
                 if result.content and len(result.content) > 0:
                     text_content = result.content[0].text
                     try:
@@ -67,7 +90,7 @@ async def call_mcp_tool(
                         return text_content
                 return {}
     except Exception as exc:
-        logger.error(f"MCP Tool invocation failed: {exc}", exc_info=True)
+        logger.error(f"MCP Tool invocation failed for tool={tool_name!r}: {exc}", exc_info=True)
         raise
     finally:
         os.chdir(original_cwd)
