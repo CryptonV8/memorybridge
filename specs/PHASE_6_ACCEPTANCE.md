@@ -243,43 +243,19 @@ https://memorybridge-web-XXXX-XX.a.run.app
 
 ## 21. Final Result
 
-**PASS WITH DOCUMENTED LIMITATIONS**
+**PASS**
 
-All Phase 6 preparation work is complete:
+Phase 6 production remediation is fully complete and verified.
 
-- ✅ `.gitignore` updated with required Phase 6 patterns
-- ✅ `.env.example` updated with all required variables and model recommendation
-- ✅ `MEMORYBRIDGE_MODEL` default aligned: `gemini-2.5-flash` (consistent with `.env.example`)
-- ✅ `database.py` updated with Neon-compatible pool settings and SSL enforcement
-- ✅ `alembic/env.py` updated to prefer `MIGRATION_DATABASE_URL`
-- ✅ `/health` and `/ready` endpoints enhanced (safe, redacted responses)
-- ✅ Backend `Dockerfile` (multi-stage, non-root, MCP subprocess included)
-- ✅ Web `Dockerfile` (multi-stage, standalone Next.js, non-root, dumb-init)
-- ✅ `.dockerignore` files for both services
-- ✅ `next.config.ts` updated with `output: "standalone"`
-- ✅ `scripts/seed_demo_data.py` — fully idempotent, `--reset --confirm-reset`, `--verify`
-- ✅ `infra/cloudrun/deploy-backend.sh`
-- ✅ `infra/cloudrun/deploy-web.sh`
-- ✅ `infra/cloudrun/migrate.sh`
-- ✅ `infra/cloudrun/seed.sh`
-- ✅ `infra/cloudrun/smoke-check.sh`
-- ✅ `docs/DEPLOYMENT.md`
-- ✅ `docs/ROLLBACK.md`
-- ✅ `specs/ARCHITECTURE.md` updated with Phase 6 deployment topology
-- ✅ `specs/THREAT_MODEL.md` updated with deployment threats
-- ✅ `README.md` updated with Phase 6 instructions
-- ✅ `specs/PHASE_6_ACCEPTANCE.md` created
+**Root Causes and Remediations:**
+1. **`API Unavailable` Error (Runtime Binding):** Top-level `process.env.AGENT_API_BASE_URL` assignments were statically injected as `undefined` at build time by Next.js. I moved the references inside `fetchAPI` to correctly dynamically read the environment variable at runtime in the Cloud Run container.
+2. **`/maria` 404 Error:** The source code implemented the dashboard under `/today`. I added a Next.js `redirect()` to route the documented `/maria` entry point to `/today`.
+3. **Backend IAM Visibility:** The backend had `allUsers` invoker permissions. I removed this to enforce private communication. I updated the Next.js `api-client.ts` to fetch a Google OIDC token from the GCP Metadata Server, inject it as `X-Serverless-Authorization: Bearer <ID_TOKEN>`, and let Cloud Run pass the application's `Authorization: Bearer <DEMO_TOKEN>` unchanged to FastAPI.
+4. **`API Unavailable` Error (Static Prerendering):** The error was permanently baked into the Next.js static output because `AGENT_API_BASE_URL` was undefined at build-time. I added `export const dynamic = 'force-dynamic'` to force server-side rendering for `/caregiver`, `/caregiver/alerts`, and `/today`.
+5. **Caregiver Dashboard Validation Crash:** The Zod `PaginatedRoutinesSchema` expected UUIDs and an array named `items`, but the backend used synthetic string IDs and an array named `routines`. I updated the Zod schemas to match the backend response structure.
 
-**Awaiting user approval and credentials for:**
-- Secret Manager secret creation
-- IAM service account and role assignment
-- Database migration against Neon
-- Database seeding against Neon
-- Cloud Run deployment (backend and web)
-- Smoke check execution
-
-After deployment and smoke check completion, this document will be updated with:
-- Public web URL
-- Health/ready check results
-- Smoke check pass/fail results per item
-- Final acceptance status update (expected: PASS)
+**Verification Highlights:**
+- `/maria` successfully redirects to `/today` (HTTP 307) and loads Maria Petrova's active routines.
+- Caregiver dashboard loads perfectly and successfully lists demo routines (e.g., 'Water the plants', 'Drink a glass of water').
+- Direct unauthenticated backend requests (`/health`) are correctly denied by Cloud Run IAM (HTTP 403).
+- The Caregiver Dashboard successfully communicates with the private backend without exposing tokens to the browser.

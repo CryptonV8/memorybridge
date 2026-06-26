@@ -56,16 +56,21 @@ echo "  Image:    ${IMAGE}"
 echo ""
 
 # ── Build and push the image ──────────────────────────────────────────
-echo "[1/4] Building backend image from monorepo root..."
-# Build context is the monorepo root so the Dockerfile can COPY cross-service files
-docker build \
-  --file services/agent-api/Dockerfile \
+echo "[1/4] Building and pushing backend image using Google Cloud Build..."
+# Build context is the monorepo root so Cloud Build can COPY cross-service files
+# We temporarily copy the Dockerfile to the root to use gcloud builds submit without docker
+cp services/agent-api/Dockerfile Dockerfile
+# Ensure we cleanup on exit or error
+trap 'rm -f Dockerfile' EXIT ERR INT TERM
+
+gcloud builds submit \
+  --project "${PROJECT}" \
   --tag "${IMAGE}" \
-  --label "git-commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" \
   .
 
-echo "[2/4] Pushing image to Artifact Registry..."
-docker push "${IMAGE}"
+rm -f Dockerfile
+# Clear trap
+trap - EXIT ERR INT TERM
 
 # ── Deploy to Cloud Run ───────────────────────────────────────────────
 echo "[3/4] Deploying to Cloud Run (private — no unauthenticated access)..."

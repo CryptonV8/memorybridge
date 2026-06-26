@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getRoutine } from '@/lib/api-client';
 import { RoutineDetailsClient } from './RoutineDetailsClient';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';

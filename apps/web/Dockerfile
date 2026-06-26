@@ -14,8 +14,8 @@ WORKDIR /app
 # Copy package manifests only — allows Docker layer caching
 COPY apps/web/package.json apps/web/package-lock.json ./
 
-# Install only production dependencies
-RUN npm ci --omit=dev
+# Install all dependencies (production + development) required to build the application
+RUN npm install --no-audit --no-fund
 
 
 # ── Stage 2: Builder ──────────────────────────────────────────────────

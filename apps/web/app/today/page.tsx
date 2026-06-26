@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import type { Metadata } from 'next';
 import { AlertTriangle } from 'lucide-react';
 import { getTodayRoutines } from '@/lib/api-client';

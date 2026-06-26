@@ -1,0 +1,53 @@
+graph TD
+    subgraph "Public Cloud Run (memorybridge-web)"
+        CaregiverUI["Caregiver UI (Next.js)"]
+        AssistedUI["Assisted-User UI (/today)"]
+    end
+
+    subgraph "Private Cloud Run (memorybridge-backend)"
+        AgentAPI["FastAPI Agent API"]
+        ADK["Google ADK Orchestrator"]
+
+        subgraph "Specialized Agents"
+            RoutineAgent["Routine Planning Agent"]
+            SafetyAgent["Semantic Safety Reviewer"]
+            CommAgent["Dementia-Friendly Comm Agent"]
+            EscalationAgent["Escalation Agent"]
+        end
+
+        MCPServer["MCP Routines Server (Subprocess)"]
+    end
+
+    NeonDB[("Neon PostgreSQL")]
+
+    CaregiverUI -- "Server-side OIDC auth" --> AgentAPI
+    AssistedUI -- "Server-side OIDC auth" --> AgentAPI
+
+    AgentAPI --> ADK
+
+    ADK --> RoutineAgent
+    ADK --> SafetyAgent
+    ADK --> CommAgent
+    ADK --> EscalationAgent
+
+    RoutineAgent -. "Agent Skills" .-> MCPServer
+    SafetyAgent -. "Agent Skills" .-> MCPServer
+    CommAgent -. "Agent Skills" .-> MCPServer
+    EscalationAgent -. "Agent Skills" .-> MCPServer
+
+    MCPServer -- "Deterministic DB Ops" --> NeonDB
+
+    %% Safety & Human-in-the-loop markers
+    MCPServer -- "Deterministic Structural Safety Gate" --> MCPServer
+    CaregiverUI -. "Human Approval Checkpoint" .-> MCPServer
+    MCPServer -. "Immutable Audit Trail" .-> NeonDB
+
+    classDef ui fill:#f9f,stroke:#333,stroke-width:2px;
+    classDef backend fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef agent fill:#dfd,stroke:#333,stroke-width:2px;
+    classDef db fill:#fdd,stroke:#333,stroke-width:2px;
+
+    class CaregiverUI,AssistedUI ui;
+    class AgentAPI,ADK,MCPServer backend;
+    class RoutineAgent,SafetyAgent,CommAgent,EscalationAgent agent;
+    class NeonDB db;

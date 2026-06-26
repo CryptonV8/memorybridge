@@ -86,17 +86,17 @@ async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
     plan: RoutinePlanOutput | None = state.get("routine_planning_agent_output")
     safety: SafetyReviewOutput | None = state.get("semantic_safety_reviewer_output")
     comm: CommunicationOutput | None = state.get("communication_agent_output")
-    
+
     # In case of prohibited, we might not have comm
     visible_steps = comm.visible_steps if comm else None
     help_text = comm.help_text if comm else None
-    
+
     context: ActorContext = state["actor_context"]
-    
+
     draft_payload = {
         "assisted_user_id": state["assisted_user_id"],
         "title": plan.title if plan else state.get("sanitized_text", "Untitled"),
-        "steps_json": plan.steps if plan else [],
+        "steps_json": plan.steps if plan else ["Request rejected by safety policy"],
         "risk_level": safety.risk_level if safety else "prohibited",
         "safety_decision": safety.safety_decision if safety else "reject_prohibited",
         "scheduled_time": plan.scheduled_time if (plan and plan.scheduled_time) else "10:00",
@@ -109,11 +109,11 @@ async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
             "original_instruction": state.get("caregiver_text", "")
         }
     }
-    
+
     # Application-controlled MCP create_routine_draft
     result = await call_mcp_tool("create_routine_draft", draft_payload, context)
     state["mcp_draft_result"] = result
-    
+
     # Prepare the final response
     state["final_response"] = {
         "draft_id": result.get("id") or result.get("routine_id") or "draft-123",
@@ -130,64 +130,64 @@ async def node_mcp_draft(state: Dict[str, Any]) -> Dict[str, Any]:
 # Setup Workflow App
 def create_routine_workflow(provider: BaseProvider) -> App:
     wf = Workflow()
-    
+
     # Add Nodes
     wf.add_node(Node("sanitization", node_sanitize))
     wf.add_node(Node("initial_policy", node_initial_policy))
-    
+
     # Agents (Skills progressively disclosed/loaded by referencing skill path)
     wf.add_node(LlmAgent("routine_planning_agent", ".agent/skills/routine-structuring/SKILL.md", provider, RoutinePlanOutput))
-    
+
     wf.add_node(Node("normalized_policy", node_normalized_policy))
-    
+
     wf.add_node(LlmAgent("semantic_safety_reviewer", ".agent/skills/safety/SKILL.md", provider, SafetyReviewOutput))
-    
+
     wf.add_node(LlmAgent("communication_agent", ".agent/skills/dementia-friendly-communication/SKILL.md", provider, CommunicationOutput))
-    
+
     wf.add_node(Node("mcp_draft", node_mcp_draft))
-    
+
     # Add Edges (the 12 step sequence)
     wf.add_edge(Edge("sanitization", "initial_policy"))
-    
+
     # If initial policy fails, skip directly to draft
     def initial_policy_fail(s): return s.get("structural_policy_result") == "prohibited"
     def initial_policy_pass(s): return s.get("structural_policy_result") == "allow"
-    
+
     wf.add_edge(Edge("initial_policy", "routine_planning_agent", condition=initial_policy_pass))
     wf.add_edge(Edge("initial_policy", "mcp_draft", condition=initial_policy_fail))
-    
+
     wf.add_edge(Edge("routine_planning_agent", "normalized_policy"))
-    
+
     def normalized_policy_fail(s): return s.get("normalized_policy_result") == "prohibited"
     def normalized_policy_pass(s): return s.get("normalized_policy_result") == "allow"
-    
+
     wf.add_edge(Edge("normalized_policy", "semantic_safety_reviewer", condition=normalized_policy_pass))
     wf.add_edge(Edge("normalized_policy", "mcp_draft", condition=normalized_policy_fail))
-    
+
     # Deterministic decision gate
-    def safety_pass(s): 
+    def safety_pass(s):
         out = s.get("semantic_safety_reviewer_output")
         return out and out.safety_decision == "allow_for_review"
-        
+
     def safety_fail(s):
         out = s.get("semantic_safety_reviewer_output")
         return not out or out.safety_decision != "allow_for_review"
-        
+
     wf.add_edge(Edge("semantic_safety_reviewer", "communication_agent", condition=safety_pass))
     wf.add_edge(Edge("semantic_safety_reviewer", "mcp_draft", condition=safety_fail))
-    
+
     wf.add_edge(Edge("communication_agent", "mcp_draft"))
-    
+
     return App(workflow=wf, entry_point="sanitization")
 
 async def execute_interpret_workflow(caregiver_text: str, assisted_user_id: str, context: ActorContext, provider: BaseProvider) -> Dict[str, Any]:
     app = create_routine_workflow(provider)
-    
+
     initial_state = {
         "caregiver_text": caregiver_text,
         "assisted_user_id": assisted_user_id,
         "actor_context": context
     }
-    
+
     final_state = await app.execute(initial_state)
     return final_state.get("final_response", {})

@@ -66,10 +66,14 @@ async def root_readiness_check():
 
     # 3. MCP subprocess script locatable
     import os as _os
-    mcp_client_path = _os.path.join(
-        _os.path.dirname(_os.path.abspath(__file__)),
-        "..", "..", "..", "..", "mcp-routines", "src", "server.py"
-    )
+    mcp_dir = _os.environ.get("MCP_ROUTINES_DIR")
+    if mcp_dir:
+        mcp_client_path = _os.path.join(mcp_dir, "src", "server.py")
+    else:
+        mcp_client_path = _os.path.join(
+            _os.path.dirname(_os.path.abspath(__file__)),
+            "..", "..", "..", "..", "mcp-routines", "src", "server.py"
+        )
     mcp_resolved = _os.path.normpath(mcp_client_path)
     if not _os.path.exists(mcp_resolved):
         issues.append("MCP server script not found at expected path")

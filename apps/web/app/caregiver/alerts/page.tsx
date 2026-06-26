@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { getAlerts } from '@/lib/api-client';
 import { Alert } from '@/lib/api-schemas';
 import { Bell, AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';

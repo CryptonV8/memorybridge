@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
 export const RoutineSchema = z.object({
-  id: z.string().uuid(),
-  assisted_user_id: z.string().uuid(),
+  id: z.string(),
+  assisted_user_id: z.string(),
   title: z.string(),
   purpose: z.string().nullable(),
   scheduled_time: z.string(),
@@ -12,15 +12,15 @@ export const RoutineSchema = z.object({
   safety_decision: z.enum(['allow_for_review', 'reject_medium_risk', 'reject_prohibited']),
   approval_status: z.enum(['pending', 'approved', 'rejected']),
   status: z.enum(['draft', 'pending_approval', 'active', 'completed', 'help_requested', 'missed', 'rejected']),
-  correlation_id: z.string().uuid().nullable().optional(),
+  correlation_id: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.any()).nullable().optional(),
 });
 
 export type Routine = z.infer<typeof RoutineSchema>;
 
 export const AuditEventSchema = z.object({
-  id: z.string().uuid(),
-  correlation_id: z.string().uuid(),
+  id: z.string(),
+  correlation_id: z.string(),
   tool_name: z.string(),
   event_type: z.string(),
   decision: z.string(),
@@ -31,8 +31,8 @@ export const AuditEventSchema = z.object({
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
 
 export const AlertSchema = z.object({
-  id: z.string().uuid(),
-  caregiver_user_id: z.string().uuid(),
+  id: z.string(),
+  caregiver_user_id: z.string(),
   message: z.string(),
   status: z.enum(['unread', 'read']),
   priority: z.enum(['low', 'normal', 'high']).optional(),
@@ -42,12 +42,12 @@ export const AlertSchema = z.object({
 export type Alert = z.infer<typeof AlertSchema>;
 
 export const PaginatedRoutinesSchema = z.object({
-  items: z.array(RoutineSchema),
+  routines: z.array(RoutineSchema),
   next_cursor: z.string().nullable(),
 });
 
 export const InterpretationDraftSchema = z.object({
-  draft_id: z.string().uuid(),
+  draft_id: z.string(),
   title: z.string(),
   scheduled_time: z.string(),
   steps: z.array(z.string()),

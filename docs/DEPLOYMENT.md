@@ -201,7 +201,7 @@ done
 | `memorybridge-database-url` | Backend | Neon pooled connection string |
 | `memorybridge-migration-database-url` | Migration script only | Neon direct connection string |
 | `memorybridge-google-api-key` | Backend | Google AI Studio API key |
-| `memorybridge-session-secret` | Web | iron-session encryption secret |
+| `memorybridge-session-secret` | Web | iron-session encryption secret (DEMO_SESSION_SECRET) |
 | `memorybridge-caregiver-token` | Web | Demo caregiver bearer token |
 | `memorybridge-assisted-user-token` | Web | Demo assisted-user bearer token |
 

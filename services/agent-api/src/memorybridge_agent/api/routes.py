@@ -61,7 +61,7 @@ async def interpret_routine(
                 "help_text": "Press Help me if you would like support."
             }
         })
-        
+
     result = await execute_interpret_workflow(payload.text, payload.assisted_user_id, context, provider)
     return AgentDraftResponse(**result)
 
@@ -72,10 +72,10 @@ async def approve_routine(
     context: ActorContext = Depends(get_actor_context)
 ):
     from ..mcp_client import call_mcp_tool
-    
+
     # Strictly deterministic, no LLM invocation
     result = await call_mcp_tool(
-        "approve_routine", 
+        "approve_routine",
         {"routine_id": routine_id, "caregiver_user_id": context.actor_id},
         context
     )
@@ -206,14 +206,17 @@ async def list_caregiver_routines(
     context: ActorContext = Depends(get_actor_context)
 ):
     from ..mcp_client import call_mcp_tool
+    args = {"limit": limit}
+    if assisted_user_id is not None:
+        args["assisted_user_id"] = assisted_user_id
+    if status is not None:
+        args["status"] = status
+    if cursor is not None:
+        args["cursor"] = cursor
+
     result = await call_mcp_tool(
         "list_caregiver_routines",
-        {
-            "assisted_user_id": assisted_user_id,
-            "status": status,
-            "limit": limit,
-            "cursor": cursor
-        },
+        args,
         context
     )
     return result

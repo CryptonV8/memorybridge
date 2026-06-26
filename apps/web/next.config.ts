@@ -51,6 +51,16 @@ const nextConfig: NextConfig = {
   // the server, avoiding bundling node_modules that are already in the image.
   output: "standalone",
 
+  async redirects() {
+    return [
+      {
+        source: "/maria",
+        destination: "/today",
+        permanent: false,
+      },
+    ];
+  },
+
   async headers() {
     return [
       {

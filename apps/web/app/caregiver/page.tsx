@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { listRoutines, getAlerts } from '@/lib/api-client';
 import Link from 'next/link';
 import { Routine, Alert } from '@/lib/api-schemas';
@@ -26,7 +28,7 @@ function getStatusBadge(status: Routine['status'], approval_status: Routine['app
   if (approval_status === 'pending') {
     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Pending Review</span>;
   }
-  
+
   switch (status) {
     case 'active':
       return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Active</span>;
@@ -61,8 +63,8 @@ export default async function CaregiverDashboard() {
     apiError = e.message || 'Unable to connect to the backend API.';
   }
 
-  const routines = routinesData?.items || [];
-  
+  const routines = routinesData?.routines || [];
+
   // Grouping
   const pendingReview = routines.filter(r => r.approval_status === 'pending');
   const active = routines.filter(r => r.status === 'active');
@@ -76,7 +78,7 @@ export default async function CaregiverDashboard() {
           <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
           <p className="text-slate-600 mt-1">Overview of Maria's routines and active alerts.</p>
         </div>
-        <Link 
+        <Link
           href="/caregiver/routines/new"
           className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors"
         >

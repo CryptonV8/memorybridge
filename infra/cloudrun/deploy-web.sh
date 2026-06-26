@@ -61,16 +61,21 @@ echo "  Image:       ${IMAGE}"
 echo ""
 
 # ── Build and push the image ──────────────────────────────────────────
-echo "[1/4] Building web image from monorepo root..."
+echo "[1/4] Building and pushing web image using Google Cloud Build..."
 # Build context is the monorepo root; web Dockerfile uses COPY apps/web/
-docker build \
-  --file apps/web/Dockerfile \
+# We temporarily copy the Dockerfile to the root to use gcloud builds submit without docker
+cp apps/web/Dockerfile Dockerfile
+# Ensure we cleanup on exit or error
+trap 'rm -f Dockerfile' EXIT ERR INT TERM
+
+gcloud builds submit \
+  --project "${PROJECT}" \
   --tag "${IMAGE}" \
-  --label "git-commit=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)" \
   .
 
-echo "[2/4] Pushing image to Artifact Registry..."
-docker push "${IMAGE}"
+rm -f Dockerfile
+# Clear trap
+trap - EXIT ERR INT TERM
 
 # ── Deploy to Cloud Run ───────────────────────────────────────────────
 echo "[3/4] Deploying web service (public — allows unauthenticated browser access)..."
@@ -89,7 +94,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --port 3000 \
   --set-env-vars "ENVIRONMENT=production,NODE_ENV=production,AGENT_API_BASE_URL=${BACKEND_URL}" \
   --set-secrets "\
-SESSION_SECRET=memorybridge-session-secret:latest,\
+DEMO_SESSION_SECRET=memorybridge-session-secret:latest,\
 DEMO_CAREGIVER_TOKEN=memorybridge-caregiver-token:latest,\
 DEMO_ASSISTED_USER_TOKEN=memorybridge-assisted-user-token:latest" \
   --platform managed \
