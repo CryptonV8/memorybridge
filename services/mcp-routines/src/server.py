@@ -12,7 +12,7 @@ from mcp.types import Tool, TextContent, CallToolResult
 
 # Import domain components
 from src.database import SessionLocal
-from src import mcp_server, schemas, auth
+from src import mcp_server, schemas, auth, models
 
 # Configure logging to write strictly to stderr so we don't corrupt stdout (used for stdio transport JSON-RPC)
 logging.basicConfig(
