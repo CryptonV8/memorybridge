@@ -87,7 +87,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --cpu 1 \
   --timeout 60s \
   --port 8080 \
-  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,AGENT_PROVIDER=gemini,MEMORYBRIDGE_MODEL=gemini-2.5-flash" \
+  --set-env-vars "ENVIRONMENT=production,LOG_LEVEL=INFO,AGENT_PROVIDER=fake,MEMORYBRIDGE_MODEL=gemini-2.5-flash" \
   --set-secrets "\
 DATABASE_URL=memorybridge-database-url:latest,\
 GOOGLE_API_KEY=memorybridge-google-api-key:latest,\
