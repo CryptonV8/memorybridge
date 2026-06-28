@@ -48,6 +48,7 @@ specs/
 evals/
 scripts/
 *.md
+!**/.agent/**/*.md
 *.png
 *.jpg
 *.webp
