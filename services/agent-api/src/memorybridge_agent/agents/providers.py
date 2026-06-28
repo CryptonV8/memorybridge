@@ -22,18 +22,29 @@ class GeminiProvider(BaseProvider):
             raise ProviderError("Missing Google API Key")
         self.api_key = api_key
         self.model = model
-        # Normally we would initialize google.genai.Client here
-        # import google.genai as genai
-        # self.client = genai.Client(api_key=api_key)
+        import google.genai as genai
+        self.client = genai.Client(api_key=api_key)
 
-    async def generate_structured(self, prompt: str, schema: Type[T], max_retries: int = 1) -> T:  # type: ignore[return]
-        # Pseudo-implementation using google-genai
-        # Should be replaced with actual async call to generate_content with response_schema
+    async def generate_structured(self, prompt: str, schema: Type[T], max_retries: int = 1) -> T:
+        from google.genai import types
         attempts = 0
         while attempts <= max_retries:
             try:
-                # Mocked LLM network call
-                raise ProviderError("Google GenAI not fully integrated in stub")
+                response = await self.client.aio.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=schema,
+                    ),
+                )
+                if not response.text:
+                    raise ProviderError("Empty response from LLM")
+                return schema.model_validate_json(response.text)
+            except ValidationError as e:
+                attempts += 1
+                if attempts > max_retries:
+                    raise ProviderError("Failed to parse LLM structured output") from e
             except Exception as e:
                 attempts += 1
                 if attempts > max_retries:

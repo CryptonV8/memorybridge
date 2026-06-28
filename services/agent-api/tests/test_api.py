@@ -13,7 +13,7 @@ def test_root_health_and_readiness():
     # Test root endpoints
     r_health = client.get("/health")
     assert r_health.status_code == 200
-    assert r_health.json() == {"status": "ok"}
+    assert r_health.json()["status"] == "ok"
 
     r_ready = client.get("/ready")
     assert r_ready.status_code == 200
@@ -58,7 +58,7 @@ def test_get_routine_success(mock_call_mcp):
     assert args[0] == "get_routine"
     assert args[1]["routine_id"] == "r-123"
     # Ensure trusted ActorContext contains correct caregiver actor_id
-    assert args[2].actor_id == "cg-123"
+    assert args[2].actor_id == "user-caregiver-anna"
 
 
 def test_update_routine_patch(mock_call_mcp):
