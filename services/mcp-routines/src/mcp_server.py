@@ -487,7 +487,7 @@ def get_audit_events(db: Session, context: schemas.ActorContext, correlation_id:
                 safe_metadata[key] = event.metadata_json[key]
 
         result.append({
-            "id": event.id,
+            "id": str(event.id),
             "correlation_id": event.correlation_id,
             "tool_name": event.tool_name,
             "event_type": event.event_type,
