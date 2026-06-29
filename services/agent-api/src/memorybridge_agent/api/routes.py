@@ -94,16 +94,19 @@ async def get_today_routines(
     )
     return result
 
+class UpdateRoutineStatusInput(BaseModel):
+    status: str
+
 @router.post("/routines/{routine_id}/status")
 async def update_routine_status(
     routine_id: str,
-    status: str,
+    payload: UpdateRoutineStatusInput,
     context: ActorContext = Depends(get_actor_context)
 ):
     from ..mcp_client import call_mcp_tool
     result = await call_mcp_tool(
         "mark_routine_status",
-        {"routine_id": routine_id, "status": status},
+        {"routine_id": routine_id, "status": payload.status},
         context
     )
     return result

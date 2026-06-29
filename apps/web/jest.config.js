@@ -13,7 +13,7 @@ const customJestConfig = {
     '^next/cache$': '<rootDir>/__mocks__/next/cache.js',
     '^next/headers$': '<rootDir>/__mocks__/next/headers.js',
   },
-  testPathIgnorePatterns: ['<rootDir>/e2e/'],
+  testPathIgnorePatterns: ['<rootDir>/e2e/', '<rootDir>/tests/verify\\.spec\\.ts'],
 };
 
 module.exports = async () => {

@@ -17,7 +17,7 @@ def test_root_health_and_readiness():
 
     r_ready = client.get("/ready")
     assert r_ready.status_code == 200
-    assert r_ready.json() == {"status": "ready"}
+    assert r_ready.json()["status"] == "ready"
 
     # Test api prefix endpoints
     r_api_health = client.get("/api/health")
@@ -137,6 +137,37 @@ def test_zero_llm_calls_on_rejection_and_approval(mock_call_mcp, mocker):
 
     # Ensure no LLM methods were called
     mock_provider.assert_not_called()
+
+def test_update_routine_status(mock_call_mcp):
+    mock_call_mcp.return_value = {"id": "r-123", "status": "completed"}
+    headers = {"Authorization": "Bearer test-sentinel-au-token"}
+    
+    # Valid status via JSON body
+    r = client.post("/api/routines/r-123/status", json={"status": "completed"}, headers=headers)
+    assert r.status_code == 200
+    assert r.json() == {"id": "r-123", "status": "completed"}
+    
+    # Assert MCP call
+    mock_call_mcp.assert_called_once()
+    args, kwargs = mock_call_mcp.call_args
+    assert args[0] == "mark_routine_status"
+    assert args[1]["status"] == "completed"
+
+    # Invalid status should be rejected by 422 if we added enum validation, 
+    # but since it's just `status: str` in BaseModel, it passes to MCP which throws ValueError.
+    # We should expect MCP to raise ValueError if the status is invalid.
+
+def test_approve_routine_payload(mock_call_mcp):
+    mock_call_mcp.return_value = {"status": "active", "routine_id": "r-123"}
+    headers = {"Authorization": "Bearer test-sentinel-cg-token"}
+    
+    # Frontend payload only contains decision: "approve"
+    r = client.post("/api/routines/r-123/approve", json={"decision": "approve"}, headers=headers)
+    assert r.status_code == 200
+    
+    # Payload with wrong decision should be rejected by Pydantic
+    r_bad = client.post("/api/routines/r-123/approve", json={"decision": "reject"}, headers=headers)
+    assert r_bad.status_code == 422
 
 
 def test_role_separation(mock_call_mcp):

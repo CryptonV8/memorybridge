@@ -139,7 +139,7 @@ export async function updateRoutine(id: string, updates: Partial<Routine>) {
 export async function approveRoutine(id: string) {
   const data = await fetchAPI(`/api/routines/${id}/approve`, {
     method: 'POST',
-    body: JSON.stringify({ routine_id: id, decision: 'approve' }),
+    body: JSON.stringify({ decision: 'approve' }),
   });
   return z.object({ status: z.string(), routine_id: z.string() }).parse(data);
 }

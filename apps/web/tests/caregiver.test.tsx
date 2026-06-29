@@ -51,7 +51,7 @@ describe('CaregiverDashboard', () => {
 
   it('renders routines and alerts grouped correctly', async () => {
     (listRoutines as jest.Mock).mockResolvedValue({
-      items: [
+      routines: [
         {
           id: 'r1',
           assisted_user_id: 'au1',
@@ -76,7 +76,8 @@ describe('CaregiverDashboard', () => {
           risk_level: 'medium',
           safety_decision: 'allow_for_review',
         }
-      ]
+      ],
+      next_cursor: null
     });
 
     (getAlerts as jest.Mock).mockResolvedValue([

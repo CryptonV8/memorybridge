@@ -14,12 +14,14 @@ export const RoutineSchema = z.object({
   status: z.enum(['draft', 'pending_approval', 'active', 'completed', 'help_requested', 'missed', 'rejected']),
   correlation_id: z.string().nullable().optional(),
   metadata: z.record(z.string(), z.any()).nullable().optional(),
+  created_at: z.string().nullable().optional(),
+  approved_at: z.string().nullable().optional(),
 });
 
 export type Routine = z.infer<typeof RoutineSchema>;
 
 export const AuditEventSchema = z.object({
-  id: z.string(),
+  id: z.coerce.string(),
   correlation_id: z.string(),
   tool_name: z.string(),
   event_type: z.string(),
@@ -31,12 +33,15 @@ export const AuditEventSchema = z.object({
 export type AuditEvent = z.infer<typeof AuditEventSchema>;
 
 export const AlertSchema = z.object({
-  id: z.string(),
+  id: z.coerce.string(),
   caregiver_user_id: z.string(),
+  assisted_user_id: z.string().optional(),
+  routine_id: z.string().optional(),
+  alert_type: z.string().optional(),
   message: z.string(),
   status: z.enum(['unread', 'read']),
   priority: z.enum(['low', 'normal', 'high']).optional(),
-  created_at: z.string().optional(),
+  created_at: z.string().nullable().optional(),
 });
 
 export type Alert = z.infer<typeof AlertSchema>;
